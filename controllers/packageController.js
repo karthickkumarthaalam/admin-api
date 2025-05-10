@@ -5,7 +5,7 @@ const { Package, sequelize } = db;
 
 exports.createPackage = async (req, res) => {
     try {
-        const { package_name, currency_id, price, duration, features, description, status, coupons, language } = req.body;
+        const { package_name, currency_id, price, duration, features, description, status, coupons, language, yearly_price } = req.body;
 
         if (!package_name || !currency_id || !price || !duration) {
             return res.status(400).json({ message: "Missing required fields" });
@@ -32,6 +32,7 @@ exports.createPackage = async (req, res) => {
             features,
             description,
             language,
+            yearly_price,
             status: status || "active"
         });
 
@@ -110,7 +111,7 @@ exports.getPackageById = async (req, res) => {
 exports.updatePackage = async (req, res) => {
     try {
         const { id } = req.params;
-        const { package_name, package_id, currency_id, price, duration, features, description, status, coupons, language } = req.body;
+        const { package_name, package_id, currency_id, price, duration, features, description, status, coupons, language, yearly_price } = req.body;
 
         const packageItem = await Package.findOne({ where: { id } });
 
@@ -126,6 +127,8 @@ exports.updatePackage = async (req, res) => {
         packageItem.description = description || packageItem.description;
         packageItem.status = status || packageItem.status;
         packageItem.package_id = package_id || packageItem.package_id;
+        packageItem.yearly_price = yearly_price || packageItem.yearly_price;
+
         if (language !== undefined) {
             packageItem.language = language;
         }

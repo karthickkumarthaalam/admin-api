@@ -27,6 +27,11 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.FLOAT,
             allowNull: false,
         },
+        yearly_price: {
+            type: DataTypes.FLOAT,
+            allowNull: true,
+            defaultValue: 0,
+        },
         duration: {
             type: DataTypes.STRING,
             allowNull: false,
