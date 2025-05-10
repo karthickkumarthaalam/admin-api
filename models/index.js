@@ -1,0 +1,37 @@
+const { Sequelize } = require("sequelize");
+const config = require("../config/db").development;
+
+
+const sequelize = new Sequelize(
+    config.database,
+    config.username,
+    config.password,
+    {
+        host: config.host,
+        dialect: config.dialect,
+        logging: process.env.NODE_ENV !== "production" ? console.log : false,
+    }
+);
+
+
+sequelize.authenticate()
+    .then(() => console.log('Database connected'))
+    .catch(err => console.log('Error: ' + err));
+
+const db = {};
+db.Sequelize = Sequelize;
+db.sequelize = sequelize;
+
+db.User = require("./user")(sequelize, Sequelize);
+db.Coupon = require("./coupon")(sequelize, Sequelize);
+db.Currency = require("./currency")(sequelize, Sequelize);
+db.Package = require("./package")(sequelize, Sequelize);
+db.CouponPackage = require("./couponPackage")(sequelize, Sequelize);
+
+Object.keys(db).forEach((modelName) => {
+    if (db[modelName].associate) {
+        db[modelName].associate(db);
+    }
+});
+
+module.exports = db;
