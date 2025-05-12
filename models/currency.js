@@ -24,5 +24,9 @@ module.exports = (sequelize, DataTypes) => {
         }
     });
 
+    Currency.associate = (models) => {
+        Currency.hasMany(models.Package, { foreignKey: "currency_id" });
+    };
+
     return Currency;
 };

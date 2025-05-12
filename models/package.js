@@ -71,6 +71,10 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: "currency_id",
             as: "currency"
         });
+
+        Package.hasMany(models.MemberPackage, {
+            foreignKey: "package_id"
+        });
     };
 
     return Package;

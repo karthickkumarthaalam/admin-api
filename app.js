@@ -36,11 +36,19 @@ const userRoutes = require("./routes/userRoutes");
 const couponRoutes = require("./routes/couponRoutes");
 const currencyRoutes = require("./routes/currencyRoutes");
 const packageRoutes = require("./routes/packageRoutes");
+const memberRoutes = require("./routes/membersRoutes");
+const paymentRoutes = require("./routes/paymentRoutes");
+const memberPackageRoutes = require("./routes/memberPackageRoutes");
+const transactionRouters = require("./routes/transactionRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
 app.use("/api/currency", currencyRoutes);
 app.use("/api/package", packageRoutes);
+app.use("/api/members", memberRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/memberPackage", memberPackageRoutes);
+app.use("/api/transactions", transactionRouters);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
