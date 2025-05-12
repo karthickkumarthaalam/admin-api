@@ -29,7 +29,7 @@ db.Package = require("./package")(sequelize, Sequelize);
 db.CouponPackage = require("./couponPackage")(sequelize, Sequelize);
 db.Members = require("./members")(sequelize, Sequelize);
 db.MemberPackage = require("./memberPackage")(sequelize, Sequelize);
-db.Transactions = require("./transaction")(sequelize, Sequelize);
+db.Transaction = require("./transaction")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
     if (db[modelName].associate) {
