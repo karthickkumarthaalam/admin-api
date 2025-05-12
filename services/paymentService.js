@@ -1,5 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require("../models");
+const transaction = require('../models/transaction');
 
 const { Transaction, MemberPackage, Package } = db;
 
@@ -32,6 +33,7 @@ exports.createPaymentIntent = async (memberId, packageId, currency, paymentMetho
 };
 
 exports.handlePaymentSuccess = async (paymentIntentId) => {
+    const t = await db.sequelize.transaction();
     try {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
@@ -40,6 +42,15 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
 
         if (!package) {
             throw new Error('Package not found');
+        }
+
+        const existingTransaction = await Transaction.findOne({
+            where: { transaction_id: paymentIntent.id, payment_status: 'completed' },
+            transaction: t
+        });
+        if (existingTransaction) {
+            await t.commit();
+            return { success: true, message: "Already processed" };
         }
 
         const startDate = new Date();
@@ -53,15 +64,11 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
             endDate.setMonth(endDate.getMonth() + 1);
         }
 
-        const charges = paymentIntent.charges.data;
-        let receiptUrl = null;
-        if (charges && charges.length > 0) {
-            receiptUrl = charges[0].receipt_url;
-        }
+        const receiptUrl = paymentIntent.charges?.data?.[0]?.receipt_url || null;
 
         await Transaction.update(
             { payment_status: 'completed', payment_proof: receiptUrl },
-            { where: { transaction_id: paymentIntent.id } }
+            { where: { transaction_id: paymentIntent.id }, transaction: t }
         );
 
         const [memberPackage, created] = await MemberPackage.findOrCreate({
@@ -73,7 +80,8 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
                 purchase_date: new Date(),
                 start_date: startDate,
                 end_date: endDate
-            }
+            },
+            transaction: t
         });
 
         if (!created) {
@@ -81,12 +89,13 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
                 status: 'active',
                 start_date: startDate,
                 end_date: endDate
-            });
+            }, { transaction: t });
         }
-
+        await t.commit();
         return { success: true, memberPackage };
 
     } catch (error) {
+        await t.rollback();
         throw error;
     }
 };

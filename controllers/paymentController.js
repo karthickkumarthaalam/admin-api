@@ -70,10 +70,14 @@ exports.webhookHandler = async (req, res) => {
             break;
         case 'payment_intent.payment_failed':
             const failedPayment = event.data.object;
-            await Transaction.update(
-                { payment_status: 'failed' },
-                { where: { transaction_id: failedPayment.id } }
-            );
+            try {
+                await Transaction.update(
+                    { payment_status: 'failed' },
+                    { where: { transaction_id: failedPayment.id } }
+                );
+            } catch (error) {
+                console.error('Failed payment update error:', error);
+            }
             break;
         default:
             console.log(`Unhandled event type ${event.type}`);
