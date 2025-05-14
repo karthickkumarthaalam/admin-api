@@ -11,13 +11,13 @@ exports.signup = async (req, res) => {
 
     try {
         if (!name || !gender || !country || !state || !city || !email || !phone || !password) {
-            return res.status(400).json({ message: "All fields as required" });
+            return res.status(400).json({ status: "error", message: "All fields as required" });
         }
 
         const existingMember = await Members.findOne({ where: { email } });
 
         if (existingMember) {
-            return res.status(400).json({ message: "Email already taken" });
+            return res.status(400).json({ status: "error", message: "Email already taken" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -43,39 +43,57 @@ exports.signup = async (req, res) => {
             password: hashedPassword,
         });
 
-        res.status(201).json({ message: "Signup successful", member: newMember });
+        const token = jwt.sign({ id: newMember.id, email: newMember.email }, process.env.JWT_SECRET, {
+            expiresIn: "1d",
+        });
+
+        res.status(201).json({ status: "success", message: "Signup successful", member: newMember, token, });
 
 
     } catch (error) {
-        return res.status(500).json({ message: "Singup Failed", error: error.message });
+        return res.status(500).json({ status: 'error', message: "Singup Failed", error: error.message });
     }
 };
 
 exports.login = async (req, res) => {
-    const { email, password } = req.body;
+    const { username, password } = req.body;
 
     try {
-        if (!email || !password) {
-            return res.status(400).json({ message: "Email and password are required" });
+        if (!username || !password) {
+            return res.status(400).json({ status: "error", message: "Mobile/email and password are required" });
         }
 
-        const member = await Members.findOne({ where: { email } });
+        const isEmail = username.includes("@");
+
+        const member = await Members.findOne({
+            where: isEmail ? { email: username } : { mobile: username },
+        });
+
         if (!member) {
-            return res.status(401).json({ message: "Invalid email or password" });
+            return res.status(401).json({ status: "error", message: "Invalid mobile/email or password" });
         }
 
         const passwordMatch = await bcrypt.compare(password, member.password);
         if (!passwordMatch) {
-            return res.status(401).json({ message: "Invalid email or password" });
+            return res.status(401).json({ status: "error", message: "Invalid mobile/email or password" });
         }
 
-        const token = jwt.sign({ id: member.id, email: member.email }, process.env.JWT_SECRET, {
-            expiresIn: "1d",
-        });
+        const token = jwt.sign(
+            { id: member.id, email: member.email },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
 
-        res.status(200).json({ message: "Login successful", token });
+        res.status(200).json({
+            status: "success",
+            message: "Login successful",
+            token: token,
+            username: member.name,
+            memberid: member.member_id,
+        });
     } catch (error) {
-        return res.status(500).json({ message: "Login failed", error: error.message });
+        console.error(error);
+        return res.status(500).json({ status: "error", message: "Login failed", error: error.message });
     }
 };
 
@@ -115,11 +133,7 @@ exports.updateMember = async (req, res) => {
 
     try {
 
-        if (parseInt(req.user.id) !== parseInt(id)) {
-            return res.status(403).json({ message: "Unauthorized access to update member data" });
-        }
-
-        const member = await Members.findByPk(id);
+        const member = await Members.findOne({ where: { member_id: id } });
         if (!member) {
             return res.status(404).json({ message: "Member not found" });
         }
@@ -178,7 +192,7 @@ exports.forgotPassword = async (req, res) => {
 
     try {
         if (!email && !phone) {
-            return res.status(400).json({ message: "Please provide email or phone" });
+            return res.status(400).json({ status: "error", message: "Please provide email or phone" });
         }
 
         let member;
@@ -189,7 +203,7 @@ exports.forgotPassword = async (req, res) => {
         }
 
         if (!member) {
-            return res.status(404).json({ message: "Member not found" });
+            return res.status(404).json({ status: "error", message: "Member not found" });
         }
 
         const otp = generateOTP();
@@ -200,11 +214,10 @@ exports.forgotPassword = async (req, res) => {
         } else if (phone) {
             console.log(`Send OTP ${otp} to phone ${phone}`);
         }
-
-        res.status(200).json({ message: "OTP sent successfully" });
+        res.status(200).json({ status: "success", message: "OTP sent successfully", memberid: member.member_id, email: member.email });
 
     } catch (error) {
-        res.status(500).json({ message: "Forgot password failed", error: error.message });
+        res.status(500).json({ status: "errror", message: "Forgot password failed", error: error.message });
     }
 };
 

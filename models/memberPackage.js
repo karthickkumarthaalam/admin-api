@@ -54,6 +54,12 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: "package_id",
             as: "package",
         });
+
+        MemberPackage.hasMany(models.Transaction, {
+            foreignKey: "member_id",
+            sourceKey: "member_id",
+            as: "transactions",
+        });
     };
 
     return MemberPackage;

@@ -1,4 +1,4 @@
-const { Transaction, Members } = require("../models");
+const { MemberPackage, Package, Transaction, Members, Currency } = require("../models");
 const { Op } = require("sequelize");
 const pagination = require("../utils/pagination");
 
@@ -46,5 +46,61 @@ exports.getAllTransactions = async (req, res) => {
         return res
             .status(500)
             .json({ message: "Error fetching transactions", error: error.message });
+    }
+};
+
+
+exports.getMemberPackageTransactions = async (req, res) => {
+    try {
+        const memberId = req.user.id;
+
+        const packages = await MemberPackage.findAll({
+            where: { member_id: memberId },
+            include: [
+                {
+                    model: Package,
+                    as: "package",
+                    include: [{ model: Currency, as: "currency" }]
+                },
+                {
+                    model: Transaction,
+                    as: "transactions",
+                    where: { member_id: memberId },
+                    required: false
+                }
+            ],
+            order: [["purchase_date", "DESC"]]
+        });
+
+        const items = packages.map((pkg) => {
+            const transaction = pkg.transactions[0] || null;
+
+            return {
+                packageid: pkg.package_id,
+                package_name: pkg.package.package_name,
+                start_date: pkg.start_date,
+                end_date: pkg.end_date,
+                price: pkg.package.price,
+                symbol: pkg.package.currency ? pkg.package.currency.symbol : "$",
+                transaction_id: transaction ? transaction.transaction_id : "-",
+                payment_status: transaction
+                    ? transaction.payment_status === "completed"
+                        ? "1"
+                        : "0"
+                    : "0"
+            };
+        });
+
+        return res.status(200).json({
+            status: "success",
+            items
+        });
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({
+            status: "error",
+            message: "Failed to fetch package purchase report",
+            error: error.message
+        });
     }
 };

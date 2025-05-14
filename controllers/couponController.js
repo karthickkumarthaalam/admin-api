@@ -2,7 +2,7 @@ const db = require("../models");
 const pagination = require("../utils/pagination");
 const { Op } = require("sequelize");
 
-const { Coupon } = db;
+const { Coupon, Package, MemberPackage } = db;
 
 exports.createCoupon = async (req, res) => {
     try {
@@ -177,5 +177,47 @@ exports.updateCouponStatus = async (req, res) => {
         return res.status(200).json({ message: "Coupon status updated successfully", data: coupon });
     } catch (error) {
         return res.status(500).json({ message: "Error updating status", error: error.message });
+    }
+};
+
+
+exports.getMemberCoupons = async (req, res) => {
+    const memberId = req.user.id;
+    try {
+        const memberPackage = await MemberPackage.findOne({
+            where: { member_id: memberId },
+            include: [
+                {
+                    model: Package,
+                    as: "package",
+                    attributes: ["id", "package_name"],
+                    include: [
+                        {
+                            model: Coupon,
+                            as: "coupons",
+                            through: { attributes: [] },
+                            where: {
+                                status: 1
+                            },
+                            required: false
+                        }
+                    ]
+                }
+            ]
+        });
+
+        if (!memberPackage || !memberPackage.package) {
+            return res.status(200).json({ status: "success", items: [] });
+        }
+
+        const coupons = memberPackage.package.coupons || [];
+        res.status(200).json({
+            status: "success",
+            items: coupons
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ status: "error", message: "Failed to fetch coupons", error: error.message });
     }
 };

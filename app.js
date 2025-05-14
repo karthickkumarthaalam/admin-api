@@ -13,7 +13,7 @@ startOtpCleaner();
 const app = express();
 
 app.use(cors({
-    origin: process.env.ADMIN_LINK,
+    origin: [process.env.ADMIN_LINK, "http://127.0.0.1:5501"],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
