@@ -2,6 +2,7 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const db = require("../models");
 const { sendOtpEmail, generateOTP } = require("../utils/sendEmail");
+const { sendZeptoMail } = require("../services/zeptoMainService");
 
 const { Members } = db;
 
@@ -207,17 +208,20 @@ exports.forgotPassword = async (req, res) => {
         }
 
         const otp = generateOTP();
-        await member.update({ otp });
+        const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
+
+        await member.update({ otp, otp_expires_at: expiresAt });
+
 
         if (email) {
-            await sendOtpEmail(email, otp);
+            await sendZeptoMail(email, member.name, otp);
         } else if (phone) {
             console.log(`Send OTP ${otp} to phone ${phone}`);
         }
         res.status(200).json({ status: "success", message: "OTP sent successfully", memberid: member.member_id, email: member.email });
 
     } catch (error) {
-        res.status(500).json({ status: "errror", message: "Forgot password failed", error: error.message });
+        res.status(500).json({ status: "error", message: "Forgot password failed", error: error.message });
     }
 };
 
@@ -234,6 +238,10 @@ exports.verifyOtp = async (req, res) => {
 
         if (!member) {
             return res.status(400).json({ message: "Invalid OTP" });
+        }
+
+        if (new Date() > new Date(member.otp_expires_at)) {
+            return res.status(400).json({ message: "OTP expired" });
         }
 
         res.status(200).json({ message: "OTP verified successfully" });

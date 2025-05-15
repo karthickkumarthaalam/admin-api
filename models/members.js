@@ -48,6 +48,10 @@ module.exports = (sequalize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: true
         },
+        otp_expires_at: {
+            type: DataTypes.DATE,
+            allowNull: true
+        },
         password: {
             type: DataTypes.STRING,
             allowNull: false,
