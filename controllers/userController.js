@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../models");
 const { generateOTP, sendOtpEmail } = require("../utils/sendEmail");
+const { sendZeptoMail } = require("../services/zeptoMainService");
 
 const { User } = db;
 
@@ -98,7 +99,7 @@ exports.forgotPassword = async (req, res) => {
 
         await user.save();
 
-        await sendOtpEmail(email, otp);
+        await sendZeptoMail(email, "admin", otp);
         res.status(200).json({ message: "OTP sent to email" });
 
     } catch (error) {

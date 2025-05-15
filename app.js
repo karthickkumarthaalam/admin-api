@@ -6,8 +6,8 @@ require('dotenv').config();
 
 
 // jobs
-const startOtpCleaner = require("./jobs/otpCleaner");
-startOtpCleaner();
+// const startOtpCleaner = require("./jobs/otpCleaner");
+// startOtpCleaner();
 
 
 const app = express();
