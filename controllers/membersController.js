@@ -214,7 +214,11 @@ exports.forgotPassword = async (req, res) => {
 
 
         if (email) {
-            await sendZeptoMail(email, member.name, otp);
+            // await sendZeptoMail(email, member.name, otp);
+            await sendOtpEmail(email, member.name, otp).catch(err => {
+                console.error("Error sending email:", err);
+                throw err;
+            });
         } else if (phone) {
             console.log(`Send OTP ${otp} to phone ${phone}`);
         }

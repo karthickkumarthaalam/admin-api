@@ -30,7 +30,7 @@ const sendZeptoMail = async (toEmail, toName, otp) => {
             headers: {
                 accept: "application/json",
                 "content-type": "application/json",
-                authorization: `Zoho-enczapikey PHtE6r0FRLvvjGUr+hYD5fG7E8/2PN8vq+wzflZEtYlLCvECHU1Xo48sxjKzqR8rVaNERqSSyY9rsL+VtOjULW7sPDxED2qyqK3sx/VYSPOZsbq6x00Vs1sdd0XcVIPmc99p0iTTvNjTNA==`
+                authorization: `Zoho-enczapikey PHtE6r1fEO2532Yt8BYI4vC4HsCsNo8p/e5uLVUWtIlBAvcFTU1W+d5+xDC++hgrAKQXQfOcztk84r2btOqFdmbvNGgaWmqyqK3sx/VYSPOZsbq6x00bslQbd0TcXI7ocddr1yDfstbcNA==`
             }
         });
 

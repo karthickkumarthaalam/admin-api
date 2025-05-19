@@ -99,7 +99,12 @@ exports.forgotPassword = async (req, res) => {
 
         await user.save();
 
-        await sendZeptoMail(email, "admin", otp);
+        // await sendZeptoMail(email, "admin", otp);
+        await sendOtpEmail(email, "admin", otp).catch(err => {
+            console.error("Error sending email:", err);
+            throw err;
+        });
+
         res.status(200).json({ message: "OTP sent to email" });
 
     } catch (error) {
@@ -112,6 +117,10 @@ exports.resetPassword = async (req, res) => {
     const { email, otp, newPassword, confirmPassword } = req.body;
 
     try {
+        if (!email || !otp || !newPassword || !confirmPassword) {
+            return res.status(400).json({ message: "All fields are required" });
+        }
+
         if (newPassword !== confirmPassword) {
             return res.status(400).json({ message: "password do not match" });
         }
@@ -139,7 +148,7 @@ exports.resetPassword = async (req, res) => {
 
         res.status(200).json({ message: "Password reset successful" });
     } catch (error) {
-        res.status(500).json({ message: "Password reset failed", error: error.mesaage });
+        res.status(500).json({ message: "Password reset failed", error: error.message });
     }
 };
 
