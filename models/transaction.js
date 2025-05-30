@@ -29,13 +29,25 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         payment_status: {
-            type: DataTypes.ENUM("completed", "pending", "failed"),
+            type: DataTypes.ENUM("completed", "pending", "failed", "refunded"),
             allowNull: false,
         },
         payment_proof: {
             type: DataTypes.TEXT,
             allowNull: true,
         },
+        refund_status: {
+            type: DataTypes.ENUM("not_requested", "pending", "approved", "rejected", "refunded"),
+            defaultValue: "not_requested"
+        },
+        refund_reason: {
+            type: DataTypes.TEXT,
+            allowNull: true,
+        },
+        refund_requested_at: {
+            type: DataTypes.DATE,
+            allowNull: true
+        }
     });
 
     Transaction.associate = (models) => {

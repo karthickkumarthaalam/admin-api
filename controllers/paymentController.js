@@ -1,47 +1,27 @@
-const { createPaymentIntent, handlePaymentSuccess } = require("../services/paymentService");
+const { createCheckoutSession, handlePaymentSuccess } = require("../services/paymentService");
 const db = require("../models");
-
-const { Transaction } = db;
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+const { Transaction, Members } = db;
 
 exports.initiatePayment = async (req, res) => {
-    const { member_id, package_id, currency, payment_method } = req.body;
+    const { member_id, package_id, currency } = req.body;
 
     try {
-        if (!member_id || !package_id || !currency || !payment_method) {
-            return res.status(400).json({
-                message: "Missing required fields"
-            });
+        if (!member_id || !package_id || !currency) {
+            return res.status(400).json({ message: "Missing required fields" });
         }
+        const member = await Members.findOne({ where: { member_id: member_id } });
 
-        const paymentIntent = await createPaymentIntent(
-            member_id,
-            package_id,
-            currency,
-            payment_method
-        );
-
-        const transaction = await Transaction.create({
-            member_id,
-            transaction_id: paymentIntent.id,
-            amount: paymentIntent.amount,
-            payment_status: paymentIntent.status,
-            payment_proof: paymentIntent.id
-        });
-
-        if (paymentIntent.status === "succeeded") {
-            await handlePaymentSuccess(paymentIntent.id);
-        }
+        const session = await createCheckoutSession(member.id, package_id, currency);
 
         res.status(200).json({
             success: true,
-            client_secret: paymentIntent.client_secret,
-            payment_intent_id: paymentIntent.id,
-            transaction
+            session_url: session.url
         });
 
     } catch (error) {
         res.status(500).json({
-            message: "payment initiation failed",
+            message: "Payment initiation failed",
             error: error.message
         });
     }
@@ -60,6 +40,22 @@ exports.webhookHandler = async (req, res) => {
     }
 
     switch (event.type) {
+        case 'payment_intent.created':
+            const createdPayment = event.data.object;
+            try {
+                await Transaction.findOrCreate({
+                    where: { transaction_id: createdPayment.id },
+                    defaults: {
+                        member_id: createdPayment.metadata.member_id,
+                        amount: createdPayment.amount / 100,
+                        payment_status: 'pending',
+                        payment_proof: null
+                    }
+                });
+            } catch (error) {
+                console.error('Error creating transaction:', error);
+            }
+            break;
         case 'payment_intent.succeeded':
             const paymentIntent = event.data.object;
             try {

@@ -24,6 +24,15 @@ module.exports = (sequelize, DataTypes) => {
             },
             onDelete: "CASCADE",
         },
+        transaction_id: {
+            type: DataTypes.INTEGER,
+            allowNull: false,
+            references: {
+                model: "Transactions",
+                key: "id"
+            },
+            onDelete: "CASCADE",
+        },
         status: {
             type: DataTypes.ENUM("active", "inactive"),
             allowNull: false,
@@ -55,10 +64,9 @@ module.exports = (sequelize, DataTypes) => {
             as: "package",
         });
 
-        MemberPackage.hasMany(models.Transaction, {
-            foreignKey: "member_id",
-            sourceKey: "member_id",
-            as: "transactions",
+        MemberPackage.belongsTo(models.Transaction, {
+            foreignKey: "transaction_id",
+            as: "transaction"
         });
     };
 

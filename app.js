@@ -19,6 +19,9 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
 
+const webhookRoute = require("./routes/webhookRoutes");
+app.use("/api/payments/webhook", webhookRoute);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());

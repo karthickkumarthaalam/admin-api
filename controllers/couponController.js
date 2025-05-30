@@ -46,6 +46,18 @@ exports.getCoupons = async (req, res) => {
 
         const filterConditions = {};
 
+        const today = new Date();
+
+        await Coupon.update(
+            { status: "expired" },
+            {
+                where: {
+                    end_date: { [Op.lt]: today },
+                    status: { [Op.not]: 'expired' }
+                }
+            }
+        );
+
         if (req.query.status) {
             filterConditions.status = req.query.status;
         }
@@ -197,7 +209,10 @@ exports.getMemberCoupons = async (req, res) => {
                             as: "coupons",
                             through: { attributes: [] },
                             where: {
-                                status: 1
+                                status: 1,
+                                end_date: {
+                                    [Op.gte]: new Date()
+                                }
                             },
                             required: false
                         }

@@ -1,5 +1,6 @@
 const { MemberPackage, Package, Transaction, Members, Currency } = require("../models");
 const { Op } = require("sequelize");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const pagination = require("../utils/pagination");
 
 exports.getAllTransactions = async (req, res) => {
@@ -64,7 +65,7 @@ exports.getMemberPackageTransactions = async (req, res) => {
                 },
                 {
                     model: Transaction,
-                    as: "transactions",
+                    as: "transaction",
                     where: { member_id: memberId },
                     required: false
                 }
@@ -73,7 +74,7 @@ exports.getMemberPackageTransactions = async (req, res) => {
         });
 
         const items = packages.map((pkg) => {
-            const transaction = pkg.transactions[0] || null;
+            const transaction = pkg.transaction || null;
 
             return {
                 packageid: pkg.package_id,
@@ -83,6 +84,7 @@ exports.getMemberPackageTransactions = async (req, res) => {
                 price: pkg.package.price,
                 symbol: pkg.package.currency ? pkg.package.currency.symbol : "$",
                 transaction_id: transaction ? transaction.transaction_id : "-",
+                refund_status: transaction.refund_status,
                 payment_status: transaction
                     ? transaction.payment_status === "completed"
                         ? "1"
@@ -101,6 +103,126 @@ exports.getMemberPackageTransactions = async (req, res) => {
             status: "error",
             message: "Failed to fetch package purchase report",
             error: error.message
+        });
+    }
+};
+
+exports.requestRefund = async (req, res) => {
+    const { transaction_id, refund_reason } = req.body;
+    try {
+        if (!transaction_id || !refund_reason) {
+            return res.status(400).json({ status: "error", message: "Transaction Id and reason are required." });
+        }
+
+        const transaction = await Transaction.findOne({ where: { transaction_id } });
+
+        if (!transaction) {
+            return res.status(404).json({ status: "error", message: "Transaction not found." });
+        }
+
+        if (transaction.payment_status !== "completed") {
+            return res.status(400).json({ status: "error", message: "Refund can only be requested for completed payments." });
+        }
+
+        if (transaction.refund_status !== "not_requested") {
+            return res.status(400).json({ status: "error", message: "Refund has already been requested or processed." });
+        }
+
+        transaction.refund_status = "pending";
+        transaction.refund_reason = refund_reason;
+        transaction.refund_requested_at = new Date();
+
+        await transaction.save();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Refund request submitted successfully. Our team will review it shortly."
+        });
+
+    } catch (error) {
+        res.status(500).json({ status: "error", message: "Failed to submit refund request.", error: error.message });
+    }
+};
+
+exports.refundPayment = async (req, res) => {
+    const { transaction_id, refund_reason } = req.body;
+
+    try {
+        if (!transaction_id || !refund_reason) {
+            return res.status(400).json({ status: "error", message: "Transaction Id and reason are required." });
+        }
+        const transaction = await Transaction.findOne({ where: { transaction_id } });
+
+        if (!transaction) {
+            return res.status(404).json({ status: "error", message: "Transaction not found" });
+        }
+        if (transaction.payment_status !== "completed") {
+            return res.status(400).json({ statusL: "error", message: "Only succeeded payments can be refunded." });
+        }
+        const refund = await stripe.refunds.create({
+            payment_intent: transaction_id,
+            reason: 'requested_by_customer',
+            metadata: { refund_reason }
+        });
+        transaction.refund_status = 'refunded';
+        transaction.refund_reason = refund_reason;
+        transaction.payment_status = 'refunded';
+        await transaction.save();
+
+        await MemberPackage.destroy({ where: { member_id: transaction.member_id } });
+
+        return res.status(200).json({
+            status: "success",
+            message: "Refund processed successfully.",
+            refund
+        });
+
+    } catch (error) {
+        console.log(error);
+        res.status(500).json({ status: "error", message: "Failed to process refund.", error: error.message });
+    }
+};
+
+exports.rejectRefund = async (req, res) => {
+    const { transaction_id } = req.body;
+    try {
+        if (!transaction_id) {
+            return res.status(400).json({
+                status: "error",
+                message: "Transaction Id is required.",
+            });
+        }
+
+        const transaction = await Transaction.findOne({ where: { transaction_id } });
+
+        if (!transaction) {
+            return res.status(404).json({
+                status: "error",
+                message: "Transaction not found.",
+            });
+        }
+
+        if (transaction.refund_status !== "pending") {
+            return res.status(400).json({
+                status: "error",
+                message: "No pending refund request for this transaction.",
+            });
+        }
+
+        transaction.refund_status = "rejected";
+        await transaction.save();
+
+        return res.status(200).json({
+            status: "success",
+            message: "Refund request rejected successfully.",
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            status: "error",
+            message: "Failed to reject refund request.",
+            error: error.message,
         });
     }
 };

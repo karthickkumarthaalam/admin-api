@@ -83,6 +83,10 @@ exports.getMemberDetails = async (req, res) => {
                             model: Coupon,
                             as: "coupons",
                             through: { attributes: [] },
+                            where: {
+                                status: "active",
+                            },
+                            required: false
                         },
                     ],
                 },
