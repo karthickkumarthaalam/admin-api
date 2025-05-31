@@ -2,7 +2,6 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../models");
 const { generateOTP, sendOtpEmail } = require("../utils/sendEmail");
-const { sendZeptoMail } = require("../services/zeptoMainService");
 
 const { User } = db;
 

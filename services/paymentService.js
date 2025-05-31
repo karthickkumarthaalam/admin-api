@@ -3,9 +3,11 @@ const db = require("../models");
 
 const { Transaction, MemberPackage, Package } = db;
 
-exports.createCheckoutSession = async (memberId, packageId, currency) => {
+exports.createCheckoutSession = async (memberId, packageId, currency, duration) => {
     const packageData = await Package.findByPk(packageId);
     if (!packageData) throw new Error("Package not found");
+
+    const unitPrice = duration === 'year' ? packageData.yearly_price * 12 : packageData.price;
 
     const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -15,16 +17,17 @@ exports.createCheckoutSession = async (memberId, packageId, currency) => {
                 currency: currency.toLowerCase(),
                 product_data: {
                     name: packageData.package_name,
-                    description: `Subscription for ${packageData.duration}`
+                    description: `Subscription for ${duration}`
                 },
-                unit_amount: packageData.price * 100
+                unit_amount: unitPrice * 100
             },
             quantity: 1
         }],
         payment_intent_data: {
             metadata: {
                 member_id: memberId,
-                package_id: packageId
+                package_id: packageId,
+                duration: duration
             },
         },
         success_url: `${process.env.FRONTEND_URL}/payment_success.html`,
@@ -39,7 +42,7 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
     try {
         const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
-        const { member_id, package_id } = paymentIntent.metadata;
+        const { member_id, package_id, duration } = paymentIntent.metadata;
 
         const pkg = await Package.findByPk(package_id, { transaction: t });
         if (!pkg) {
@@ -70,12 +73,10 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
         const startDate = new Date();
         const endDate = new Date(startDate);
 
-        if (pkg.duration === "month") {
+        if (duration === "month") {
             endDate.setMonth(endDate.getMonth() + 1);
-        } else if (pkg.duration === "year") {
+        } else if (duration === "year") {
             endDate.setFullYear(endDate.getFullYear() + 1);
-        } else {
-            endDate.setMonth(endDate.getMonth() + 1);
         }
 
         const [memberPackage, created] = await MemberPackage.findOrCreate({

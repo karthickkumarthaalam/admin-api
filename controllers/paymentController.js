@@ -4,15 +4,15 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { Transaction, Members } = db;
 
 exports.initiatePayment = async (req, res) => {
-    const { member_id, package_id, currency } = req.body;
+    const { member_id, package_id, currency, duration } = req.body;
 
     try {
-        if (!member_id || !package_id || !currency) {
+        if (!member_id || !package_id || !currency || !duration) {
             return res.status(400).json({ message: "Missing required fields" });
         }
         const member = await Members.findOne({ where: { member_id: member_id } });
 
-        const session = await createCheckoutSession(member.id, package_id, currency);
+        const session = await createCheckoutSession(member.id, package_id, currency, duration);
 
         res.status(200).json({
             success: true,

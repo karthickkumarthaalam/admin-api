@@ -8,6 +8,8 @@ require('dotenv').config();
 // jobs
 // const startOtpCleaner = require("./jobs/otpCleaner");
 // startOtpCleaner();
+const startPackageExpiryChecker = require("./jobs/packageStatusCron");
+startPackageExpiryChecker();
 
 
 const app = express();

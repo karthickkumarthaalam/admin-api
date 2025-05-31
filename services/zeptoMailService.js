@@ -1,7 +1,7 @@
 const axios = require("axios");
 require("dotenv").config();
 
-const sendZeptoMail = async (toEmail, toName, otp) => {
+const sendZeptoMail = async ({ toEmail, toName, subject, mergeInfo }) => {
     const url = "https://api.zeptomail.in/v1.1/email/template";
 
     const data = {
@@ -17,12 +17,9 @@ const sendZeptoMail = async (toEmail, toName, otp) => {
                 }
             }
         ],
-        subject: "Your Password Reset OTP",
+        subject: subject,
         template_key: process.env.ZEPTO_TEMPLATE_KEY,
-        merge_info: {
-            name: toName,
-            otp: otp
-        }
+        merge_info: mergeInfo
     };
 
     try {

@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
             onDelete: "CASCADE",
         },
         status: {
-            type: DataTypes.ENUM("active", "inactive"),
+            type: DataTypes.ENUM("active", "inactive", "expired"),
             allowNull: false,
             defaultValue: "active"
         },
