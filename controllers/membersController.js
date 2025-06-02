@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const db = require("../models");
-const { sendOtpEmail, generateOTP } = require("../utils/sendEmail");
+const { sendOtpEmail, verificationEmail, generateOTP } = require("../utils/sendEmail");
 
 const { Members } = db;
 
@@ -11,7 +11,7 @@ exports.signup = async (req, res) => {
 
     try {
         if (!name || !gender || !country || !state || !city || !email || !phone || !password) {
-            return res.status(400).json({ status: "error", message: "All fields as required" });
+            return res.status(400).json({ status: "error", message: "All fields are required" });
         }
 
         const existingMember = await Members.findOne({ where: { email } });
@@ -31,27 +31,34 @@ exports.signup = async (req, res) => {
             if (!existingId) isUnique = true;
         }
 
+        const otp = generateOTP();
+        const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
         const newMember = await Members.create({
-            name,
-            gender,
-            country,
-            state,
-            city,
-            email,
-            member_id: memberId,
-            phone,
+            name, gender, country, state, city, email, phone,
             password: hashedPassword,
+            member_id: memberId,
+            otp,
+            otp_expires_at: otpExpiresAt,
+            is_verified: false
+        });
+        await verificationEmail(email, name, otp).catch(err => {
+            console.error("Email send error:", err);
         });
 
-        const token = jwt.sign({ id: newMember.id, email: newMember.email }, process.env.JWT_SECRET, {
-            expiresIn: "1d",
+        res.status(201).json({
+            status: "success",
+            message: "Signup successful. OTP sent to your email.",
+            member: {
+                id: newMember.id,
+                member_id: newMember.member_id,
+                name: newMember.name,
+                email: newMember.email,
+                is_verified: newMember.is_verified
+            }
         });
-
-        res.status(201).json({ status: "success", message: "Signup successful", member: newMember, token, });
-
 
     } catch (error) {
-        return res.status(500).json({ status: 'error', message: "Singup Failed", error: error.message });
+        res.status(500).json({ status: "error", message: "Signup failed.", error: error.message });
     }
 };
 
@@ -234,18 +241,28 @@ exports.verifyOtp = async (req, res) => {
     try {
         let member;
         if (email) {
-            member = await Members.findOne({ where: { email, otp } });
+            member = await Members.findOne({ where: { email } });
         } else if (phone) {
-            member = await Members.findOne({ where: { phone, otp } });
+            member = await Members.findOne({ where: { phone } });
         }
 
         if (!member) {
+            return res.status(404).json({ message: "Member not found" });
+        }
+
+        if (member.otp !== otp) {
             return res.status(400).json({ message: "Invalid OTP" });
         }
 
         if (new Date() > new Date(member.otp_expires_at)) {
             return res.status(400).json({ message: "OTP expired" });
         }
+
+        await member.update({
+            is_verified: true,
+            otp: null,
+            otp_expires_at: null
+        });
 
         res.status(200).json({ message: "OTP verified successfully" });
 

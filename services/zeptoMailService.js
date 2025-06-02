@@ -33,7 +33,6 @@ const sendZeptoMail = async ({ toEmail, toName, subject, mergeInfo }) => {
 
         return response.data;
     } catch (error) {
-        console.log(error);
         console.error("ZeptoMail Error:", error.response?.data || error.message);
         throw new Error("Failed to send OTP email");
     }

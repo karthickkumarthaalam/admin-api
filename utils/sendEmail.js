@@ -61,6 +61,31 @@ const sendOtpEmail = async (toEmail, toName, otp) => {
     return await sendEmail({ toEmail, toName, subject: "Your Password Reset OTP", htmlContent, attachments });
 };
 
+const verificationEmail = async (toEmail, toName, otp) => {
+    const htmlContent = `   
+     <div style="font-family: Arial, sans-serif; color: #333;>
+        <h2>Hello ${toName}, </h2>
+        <p>Verify your account</p>
+        <h1 style="color: #d63384;">${otp}</h1>
+        <p>THis OTP is valid for 5 minutes.</p>
+        <br>
+        <p>Regard,<br>Thaalam Media Team</p>
+        <img src="cid:logoimg" alt-"Thaalam Media Logo" style="width: 150px; margin-top: 20px;"+/> 
+     </div>
+    `;
+
+    const attachments = [
+        {
+            filename: "thaalam-logo.png",
+            path: path.join(__dirname, "../public/assests/thaalam-logo.png"),
+            cid: "logoimage",
+        }
+    ];
+
+
+    return await sendEmail({ toEmail, subject: "Verification OTP ", htmlContent, attachments });
+};
+
 const sendExpiryEmail = async (toEmail, toName, expiryDate) => {
     const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -111,6 +136,7 @@ const sendPreExpiryEmail = async (toEmail, toName, expiryDate) => {
 module.exports = {
     sendEmail,
     sendOtpEmail,
+    verificationEmail,
     sendExpiryEmail,
     sendPreExpiryEmail,
     generateOTP,
