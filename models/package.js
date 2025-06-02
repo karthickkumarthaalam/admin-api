@@ -37,8 +37,15 @@ module.exports = (sequelize, DataTypes) => {
             allowNull: false,
         },
         features: {
-            type: DataTypes.JSON,
+            type: DataTypes.TEXT,
             allowNull: true,
+            get() {
+                const value = this.getDataValue('features');
+                return value ? JSON.parse(value) : [];
+            },
+            set(value) {
+                this.setDataValue('features', JSON.stringify(value));
+            }
         },
         description: {
             type: DataTypes.TEXT,
@@ -50,9 +57,16 @@ module.exports = (sequelize, DataTypes) => {
             defaultValue: "active",
         },
         language: {
-            type: DataTypes.JSON,
+            type: DataTypes.TEXT,
             allowNull: false,
-            defaultValue: "All"
+            defaultValue: '["All"]',
+            get() {
+                const value = this.getDataValue('language');
+                return value ? JSON.parse(value) : [];
+            },
+            set(value) {
+                this.setDataValue('language', JSON.stringify(value));
+            }
         }
     });
 
