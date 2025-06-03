@@ -247,15 +247,15 @@ exports.verifyOtp = async (req, res) => {
         }
 
         if (!member) {
-            return res.status(404).json({ message: "Member not found" });
+            return res.status(404).json({ status: "error", message: "Member not found" });
         }
 
         if (member.otp !== otp) {
-            return res.status(400).json({ message: "Invalid OTP" });
+            return res.status(400).json({ status: "error", message: "Invalid OTP" });
         }
 
         if (new Date() > new Date(member.otp_expires_at)) {
-            return res.status(400).json({ message: "OTP expired" });
+            return res.status(400).json({ status: "error", message: "OTP expired" });
         }
 
         await member.update({
@@ -264,10 +264,10 @@ exports.verifyOtp = async (req, res) => {
             otp_expires_at: null
         });
 
-        res.status(200).json({ message: "OTP verified successfully" });
+        res.status(200).json({ status: "success", message: "OTP verified successfully" });
 
     } catch (error) {
-        res.status(500).json({ message: "OTP verification failed", error: error.message });
+        res.status(500).json({ status: "errror", message: "OTP verification failed", error: error.message });
     }
 };
 
@@ -276,11 +276,11 @@ exports.resetPassword = async (req, res) => {
 
     try {
         if (!newPassword || !confirmPassword) {
-            return res.status(400).json({ message: "Passwords are required" });
+            return res.status(400).json({ status: "error", message: "Passwords are required" });
         }
 
         if (newPassword !== confirmPassword) {
-            return res.status(400).json({ message: "Passwords do not match" });
+            return res.status(400).json({ status: "error", message: "Passwords do not match" });
         }
 
         let member;
@@ -291,15 +291,15 @@ exports.resetPassword = async (req, res) => {
         }
 
         if (!member) {
-            return res.status(404).json({ message: "Member not found" });
+            return res.status(404).json({ status: "error", message: "Member not found" });
         }
 
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await member.update({ password: hashedPassword, otp: null });
 
-        res.status(200).json({ message: "Password reset successful" });
+        res.status(200).json({ status: "success", message: "Password reset successful" });
 
     } catch (error) {
-        res.status(500).json({ message: "Password reset failed", error: error.message });
+        res.status(500).json({ status: "error", message: "Password reset failed", error: error.message });
     }
 };
