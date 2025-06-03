@@ -31,11 +31,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Database sync
-if (process.env.NODE_ENV === "development") {
-    db.sequelize.sync().then(() => {
-        console.log("Database synchronized (alter mode)");
-    });
-}
+db.sequelize.sync().then(() => {
+    console.log("Database synchronized (alter mode)");
+});
 
 
 // Routes 
