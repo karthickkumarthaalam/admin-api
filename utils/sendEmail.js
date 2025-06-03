@@ -77,7 +77,7 @@ const verificationEmail = async (toEmail, toName, otp) => {
     const attachments = [
         {
             filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assests/thaalam-logo.png"),
+            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
             cid: "logoimage",
         }
     ];

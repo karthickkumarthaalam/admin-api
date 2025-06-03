@@ -10,7 +10,7 @@ exports.createCheckoutSession = async (memberId, packageId, currency, duration) 
     const unitPrice = duration === 'year' ? packageData.yearly_price * 12 : packageData.price;
 
     const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card'],
+        payment_method_types: ['card', 'twint'],
         mode: 'payment',
         line_items: [{
             price_data: {
@@ -30,8 +30,8 @@ exports.createCheckoutSession = async (memberId, packageId, currency, duration) 
                 duration: duration
             },
         },
-        success_url: `${process.env.FRONTEND_URL}/payment_success.html`,
-        cancel_url: `${process.env.FRONTEND_URL}/payment_failure.html`,
+        success_url: `${process.env.FRONTEND_URL}/payment_success`,
+        cancel_url: `${process.env.FRONTEND_URL}/payment_failure`,
     });
 
     return session;
