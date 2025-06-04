@@ -1,5 +1,6 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require("../models");
+const { sendPaymentReceiptEmail } = require('../utils/sendEmail');
 
 const { Transaction, MemberPackage, Package } = db;
 
@@ -48,6 +49,8 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
         if (!pkg) {
             throw new Error('Package not found');
         }
+        const charge = await stripe.charges.retrieve(paymentIntent.latest_charge);
+        const receiptUrl = charge.receipt_url;
 
         let transaction = await Transaction.findOne({
             where: { transaction_id: paymentIntent.id },
@@ -65,7 +68,7 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
                 package_id,
                 amount: paymentIntent.amount_received,
                 payment_status: 'completed',
-                payment_proof: paymentIntent.charges?.data?.[0]?.receipt_url || null,
+                payment_proof: receiptUrl || null,
                 refund_status: null,
             }, { transaction: t });
         }
@@ -102,10 +105,39 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
             }, { transaction: t });
         }
         await t.commit();
-        return { success: true, memberPackage };
+        return { success: true, memberPackage, receiptUrl };
 
     } catch (error) {
         await t.rollback();
+        throw error;
+    }
+};
+
+exports.sendRecieptToMember = async (paymentIntent, memberPackage, receiptUrl) => {
+    try {
+        const member = await db.Members.findOne({ where: { id: memberPackage.member_id } });
+        if (!member) {
+            throw new Error("Member not found");
+        }
+
+        const pkg = await Package.findByPk(memberPackage.package_id);
+        if (!pkg) {
+            throw new Error("Package not found");
+        }
+
+        const amountPaid = (paymentIntent.amount_received / 100).toFixed(2);
+        const currency = paymentIntent.currency;
+
+        await sendPaymentReceiptEmail(
+            member.email,
+            member.name,
+            pkg.package_name,
+            amountPaid,
+            currency,
+            receiptUrl
+        );
+
+    } catch (error) {
         throw error;
     }
 };

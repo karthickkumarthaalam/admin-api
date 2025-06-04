@@ -23,7 +23,7 @@ exports.getAllMemberPackages = async (req, res) => {
 
         const filterConditions = {};
 
-        if (req.query.searchQuery) {
+        if (req.query.search) {
             const searchQuery = `%${req.query.search}%`;
 
             filterConditions[Op.or] = [
@@ -39,6 +39,7 @@ exports.getAllMemberPackages = async (req, res) => {
         const result = await pagination(MemberPackage, {
             page,
             limit,
+            where: filterConditions,
             include
         });
 

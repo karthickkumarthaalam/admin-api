@@ -1,4 +1,4 @@
-const { createCheckoutSession, handlePaymentSuccess } = require("../services/paymentService");
+const { createCheckoutSession, handlePaymentSuccess, sendRecieptToMember } = require("../services/paymentService");
 const db = require("../models");
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { Transaction, Members } = db;
@@ -59,7 +59,8 @@ exports.webhookHandler = async (req, res) => {
         case 'payment_intent.succeeded':
             const paymentIntent = event.data.object;
             try {
-                await handlePaymentSuccess(paymentIntent.id);
+                const result = await handlePaymentSuccess(paymentIntent.id);
+                await sendRecieptToMember(paymentIntent, result.memberPackage, result.receiptUrl);
             } catch (error) {
                 console.error('Error handling payment success:', error);
             }

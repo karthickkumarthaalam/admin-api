@@ -2,15 +2,18 @@ const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const db = require("../models");
 const { sendOtpEmail, verificationEmail, generateOTP } = require("../utils/sendEmail");
+const { Op } = require("sequelize");
+const pagination = require("../utils/pagination");
 
 const { Members } = db;
 
 
 exports.signup = async (req, res) => {
-    const { name, gender, country, state, city, email, phone, password } = req.body;
+    const { name, gender, country, state, city, email, phone, password, address1, address2 } = req.body;
 
     try {
-        if (!name || !gender || !country || !state || !city || !email || !phone || !password) {
+        console.log(req.body);
+        if (!name || !gender || !country || !state || !city || !email || !phone || !password || !address1 || !address2) {
             return res.status(400).json({ status: "error", message: "All fields are required" });
         }
 
@@ -18,6 +21,12 @@ exports.signup = async (req, res) => {
 
         if (existingMember) {
             return res.status(400).json({ status: "error", message: "Email already taken" });
+        }
+
+        const existingMobile = await Members.findOne({ where: { phone } });
+
+        if (existingMobile) {
+            return res.status(400).json({ status: "error", message: "Phone Number already taken" });
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -34,7 +43,7 @@ exports.signup = async (req, res) => {
         const otp = generateOTP();
         const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
         const newMember = await Members.create({
-            name, gender, country, state, city, email, phone,
+            name, gender, country, state, city, email, phone, address1, address2,
             password: hashedPassword,
             member_id: memberId,
             otp,
@@ -127,8 +136,34 @@ exports.getMemberById = async (req, res) => {
 
 exports.getAllMembers = async (req, res) => {
     try {
-        const members = await Members.findAll();
-        res.status(200).json(members);
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 20;
+
+        const filterConditions = {};
+
+        if (req.query.search) {
+            const searchQuery = `%${req.query.search}%`;
+
+            filterConditions[Op.or] = [
+                { "$name$": { [Op.like]: searchQuery } },
+                { "$member_id$": { [Op.like]: searchQuery } },
+                { "$phone$": { [Op.like]: searchQuery } },
+                { "$member_id$": { [Op.like]: searchQuery } }
+            ];
+        }
+
+        const result = await pagination(Members, {
+            page,
+            limit,
+            where: filterConditions,
+        });
+
+        res.status(200).json({
+            message: "Members fetched successfully",
+            data: result.data,
+            pagination: result.pagination
+        });
+
     } catch (error) {
         res.status(500).json({ message: "Failed to fetch members", error: error.message });
     }
@@ -136,7 +171,7 @@ exports.getAllMembers = async (req, res) => {
 
 exports.updateMember = async (req, res) => {
     const { id } = req.params;
-    const { name, gender, country, state, city, phone } = req.body;
+    const { name, gender, country, state, city, phone, address1, address2 } = req.body;
 
     try {
 
@@ -153,6 +188,8 @@ exports.updateMember = async (req, res) => {
         if (state) updatedData.state = state;
         if (city) updatedData.city = city;
         if (phone) updatedData.phone = phone;
+        if (address1) updatedData.address1 = address1;
+        if (address2) updatedData.address2 = address2;
 
         await member.update(updatedData);
 

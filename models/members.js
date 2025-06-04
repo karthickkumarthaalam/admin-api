@@ -34,6 +34,14 @@ module.exports = (sequalize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false
         },
+        address1: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        address2: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
         email: {
             type: DataTypes.STRING,
             allowNull: false,
