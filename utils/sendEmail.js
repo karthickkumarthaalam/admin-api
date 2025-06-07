@@ -67,7 +67,7 @@ const verificationEmail = async (toEmail, toName, otp) => {
         <h2>Hello ${toName}, </h2>
         <p>Verify your account</p>
         <h1 style="color: #d63384;">${otp}</h1>
-        <p>THis OTP is valid for 5 minutes.</p>
+        <p>This OTP is valid for 5 minutes.</p>
         <br>
         <p>Regard,<br>Thaalam Media Team</p>
         <img src="cid:logoimg" alt-"Thaalam Media Logo" style="width: 150px; margin-top: 20px;"+/> 

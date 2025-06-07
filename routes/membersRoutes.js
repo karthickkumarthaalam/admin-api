@@ -5,14 +5,17 @@ const { verifyToken } = require("../middlewares/authMiddleware");
 
 router.post("/signup", memberController.signup);
 router.post("/login", memberController.login);
-router.get("/", memberController.getAllMembers);
-router.get("/:id", verifyToken, memberController.getMemberById);
-router.put("/:id", verifyToken, memberController.updateMember);
-router.post("/change-password", verifyToken, memberController.changePassword);
 router.post("/forgot-password", memberController.forgotPassword);
 router.post("/verify-otp", memberController.verifyOtp);
 router.post("/reset-password", memberController.resetPassword);
 
+router.post("/change-password", verifyToken, memberController.changePassword);
+router.post("/:id/request-update-otp", verifyToken, memberController.requestUpdateOtp);
+
+router.get("/:id", verifyToken, memberController.getMemberById);
+router.put("/:id", verifyToken, memberController.updateMember);
+
+router.get("/", memberController.getAllMembers);
 
 
 module.exports = router;

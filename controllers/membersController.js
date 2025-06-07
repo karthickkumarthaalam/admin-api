@@ -12,7 +12,6 @@ exports.signup = async (req, res) => {
     const { name, gender, country, state, city, email, phone, password, address1, address2 } = req.body;
 
     try {
-        console.log(req.body);
         if (!name || !gender || !country || !state || !city || !email || !phone || !password || !address1 || !address2) {
             return res.status(400).json({ status: "error", message: "All fields are required" });
         }
@@ -169,15 +168,47 @@ exports.getAllMembers = async (req, res) => {
     }
 };
 
+exports.requestUpdateOtp = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const member = await Members.findOne({ where: { member_id: id } });
+        if (!member) {
+            return res.status(404).json({ status: "error", message: "Member not available" });
+        }
+
+        const otp = generateOTP();
+        const otpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+
+        await member.update({
+            otp,
+            otp_expires_at: otpExpiresAt
+        });
+
+        await verificationEmail(member.email, member.name, otp);
+
+        res.status(200).json({ status: "success", message: "OTP send successfully" });
+    } catch (error) {
+        res.status(500).json({ status: "error", message: "Failed to process OTP", error: error.message });
+    }
+};
+
 exports.updateMember = async (req, res) => {
     const { id } = req.params;
-    const { name, gender, country, state, city, phone, address1, address2 } = req.body;
+    const { name, gender, country, state, city, phone, address1, address2, otp } = req.body;
 
     try {
 
         const member = await Members.findOne({ where: { member_id: id } });
         if (!member) {
-            return res.status(404).json({ message: "Member not found" });
+            return res.status(404).json({ status: "error", message: "Member not found" });
+        }
+
+        if (member.otp !== otp) {
+            return res.status(400).json({ status: "error", message: "Invalid OTP" });
+        }
+
+        if (new Date() > new Date(member.otp_expires_at)) {
+            return res.status(400).json({ status: "error", message: "OTP expired" });
         }
 
         const updatedData = {};
@@ -191,12 +222,16 @@ exports.updateMember = async (req, res) => {
         if (address1) updatedData.address1 = address1;
         if (address2) updatedData.address2 = address2;
 
-        await member.update(updatedData);
+        await member.update({
+            ...updatedData,
+            otp: null,
+            otp_expires_at: null
+        });
 
-        res.status(200).json({ message: "Member updated successfully", member });
+        res.status(200).json({ status: "success", message: "Member updated successfully", member });
 
     } catch (error) {
-        res.status(500).json({ message: "Failed to update member", error: error.message });
+        res.status(500).json({ status: "error", message: "Failed to update member", error: error.message });
     }
 };
 

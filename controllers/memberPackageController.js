@@ -99,6 +99,9 @@ exports.getMemberDetails = async (req, res) => {
             name: member.name,
             email: member.email,
             mobile: member.phone,
+            gender: member.gender,
+            address1: member.address1,
+            address2: member.address2,
         };
 
         if (memberPackage && memberPackage.package) {
