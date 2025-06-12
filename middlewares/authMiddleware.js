@@ -39,3 +39,22 @@ exports.verifyToken = (req, res, next) => {
     });
 
 };
+
+exports.checkPermission = (permission) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ message: "Authentication required" });
+        }
+
+        if (req.user.email === "admin") {
+            return next();
+        }
+
+        const { acl } = req.user;
+
+        if (!Array.isArray(acl) || !acl.includes(permission)) {
+            return res.status(403).json({ message: "Access denied: insufficient permissions" });
+        }
+        next();
+    };
+};
