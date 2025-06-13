@@ -68,6 +68,18 @@ module.exports = (sequalize, DataTypes) => {
             type: DataTypes.BOOLEAN,
             allowNull: true,
             default: false,
+        },
+        stripe_customer_id: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        payment_method_id: {
+            type: DataTypes.STRING,
+            allowNull: true
+        },
+        auto_renew: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         }
     });
 

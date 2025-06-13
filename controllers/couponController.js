@@ -197,7 +197,12 @@ exports.getMemberCoupons = async (req, res) => {
     const memberId = req.user.id;
     try {
         const memberPackage = await MemberPackage.findOne({
-            where: { member_id: memberId },
+            where: {
+                member_id: memberId,
+                status: {
+                    [Op.in]: ["active", "grace_period"]
+                }
+            },
             include: [
                 {
                     model: Package,

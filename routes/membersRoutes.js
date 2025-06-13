@@ -11,6 +11,7 @@ router.post("/reset-password", memberController.resetPassword);
 
 router.post("/change-password", verifyToken, memberController.changePassword);
 router.post("/:id/request-update-otp", verifyToken, memberController.requestUpdateOtp);
+router.put("/:id/toggle-auto-renew", verifyToken, memberController.toggleAutoRenewal);
 
 router.get("/:id", verifyToken, memberController.getMemberById);
 router.put("/:id", verifyToken, memberController.updateMember);

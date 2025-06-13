@@ -4,7 +4,7 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const { Transaction, Members } = db;
 
 exports.initiatePayment = async (req, res) => {
-    const { member_id, package_id, currency, duration } = req.body;
+    const { member_id, package_id, currency, duration, auto_renew } = req.body;
 
     try {
         if (!member_id || !package_id || !currency || !duration) {
@@ -12,7 +12,7 @@ exports.initiatePayment = async (req, res) => {
         }
         const member = await Members.findOne({ where: { member_id: member_id } });
 
-        const session = await createCheckoutSession(member.id, package_id, currency, duration);
+        const session = await createCheckoutSession(member, package_id, currency, duration, auto_renew);
 
         res.status(200).json({
             success: true,
@@ -47,6 +47,7 @@ exports.webhookHandler = async (req, res) => {
                     where: { transaction_id: createdPayment.id },
                     defaults: {
                         member_id: createdPayment.metadata.member_id,
+                        package_id: createdPayment.metadata.package_id,
                         amount: createdPayment.amount / 100,
                         payment_status: 'pending',
                         payment_proof: null
@@ -60,7 +61,14 @@ exports.webhookHandler = async (req, res) => {
             const paymentIntent = event.data.object;
             try {
                 const result = await handlePaymentSuccess(paymentIntent.id);
-                await sendRecieptToMember(paymentIntent, result.memberPackage, result.receiptUrl);
+                await sendRecieptToMember(paymentIntent, result.member, result.pkg, result.receiptUrl);
+
+                if (paymentIntent.metadata.auto_renew === 'true' || paymentIntent.metadata.auto_renew === true) {
+                    await result.member.update({
+                        payment_method_id: paymentIntent.payment_method,
+                        auto_renew: true
+                    });
+                }
             } catch (error) {
                 console.error('Error handling payment success:', error);
             }

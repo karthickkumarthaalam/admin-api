@@ -55,43 +55,42 @@ exports.getMemberPackageTransactions = async (req, res) => {
     try {
         const memberId = req.user.id;
 
-        const packages = await MemberPackage.findAll({
+        const transactions = await Transaction.findAll({
             where: { member_id: memberId },
             include: [
                 {
                     model: Package,
                     as: "package",
-                    include: [{ model: Currency, as: "currency" }]
-                },
-                {
-                    model: Transaction,
-                    as: "transaction",
-                    where: { member_id: memberId },
-                    required: false
+                    include: [
+                        {
+                            model: Currency,
+                            as: "currency"
+                        }
+                    ]
                 }
             ],
-            order: [["purchase_date", "DESC"]]
+            order: [["transaction_date", "DESC"]],
+            raw: true,
+            nest: true,
         });
 
-        const items = packages.map((pkg) => {
-            const transaction = pkg.transaction || null;
+        let items = [];
 
-            return {
-                packageid: pkg.package_id,
-                package_name: pkg.package.package_name,
-                start_date: pkg.start_date,
-                end_date: pkg.end_date,
-                price: pkg.package.price,
-                symbol: pkg.package.currency ? pkg.package.currency.symbol : "$",
-                transaction_id: transaction ? transaction.transaction_id : "-",
-                refund_status: transaction.refund_status,
-                payment_status: transaction
-                    ? transaction.payment_status === "completed"
-                        ? "1"
-                        : "0"
-                    : "0"
-            };
-        });
+        if (transactions.length > 0) {
+            items = transactions.map(transaction => {
+                return {
+                    package_id: transaction.package_id,
+                    package_name: transaction.package.package_name,
+                    start_date: transaction.transaction_date,
+                    end_date: null,
+                    price: transaction.amount,
+                    symbol: transaction.package.currency ? transaction.package.currency.symbol : "CHF",
+                    transaction_id: transaction.transaction_id,
+                    refund_status: transaction.refund_status,
+                    payment_status: transaction.payment_status === "completed" ? "1" : "0"
+                };
+            });
+        }
 
         return res.status(200).json({
             status: "success",

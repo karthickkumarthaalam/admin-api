@@ -14,6 +14,15 @@ module.exports = (sequelize, DataTypes) => {
             },
             onDelete: "CASCADE",
         },
+        package_id: {
+            type: DataTypes.INTEGER,
+            allowNull: true,
+            references: {
+                model: "Packages",
+                key: "id",
+            },
+            onDelete: "CASCADE",
+        },
         transaction_id: {
             type: DataTypes.STRING,
             allowNull: false,
@@ -54,6 +63,11 @@ module.exports = (sequelize, DataTypes) => {
         Transaction.belongsTo(models.Members, {
             foreignKey: "member_id",
             as: "member",
+        });
+
+        Transaction.belongsTo(models.Package, {
+            foreignKey: "package_id",
+            as: "package",
         });
     };
 

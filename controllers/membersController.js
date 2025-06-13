@@ -292,7 +292,6 @@ exports.forgotPassword = async (req, res) => {
 
 
         if (email) {
-            // await sendZeptoMail(email, member.name, otp);
             await sendOtpEmail(email, member.name, otp).catch(err => {
                 console.error("Error sending email:", err);
                 throw err;
@@ -373,5 +372,34 @@ exports.resetPassword = async (req, res) => {
 
     } catch (error) {
         res.status(500).json({ status: "error", message: "Password reset failed", error: error.message });
+    }
+};
+
+
+
+exports.toggleAutoRenewal = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { auto_renew } = req.body;
+
+        console.log(`Member ID: ${id}, Set Auto-Renew: ${auto_renew}`);
+
+        const member = await Members.findByPk(id);
+
+        if (!member) {
+            return res.status(404).json({ status: "error", message: "Member not found" });
+        }
+
+        await member.update({ auto_renew });
+
+        const statusText = auto_renew ? "enabled" : "disabled";
+
+        res.status(200).json({
+            status: "success",
+            message: `Auto-renewal ${statusText} successfully`
+        });
+
+    } catch (error) {
+        return res.status(500).json({ status: "error", message: "Failed to disable auto-renewal", error: error.message });
     }
 };

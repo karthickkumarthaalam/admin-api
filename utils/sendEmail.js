@@ -133,6 +133,39 @@ const sendPreExpiryEmail = async (toEmail, toName, expiryDate) => {
     return await sendEmail({ toEmail, toName, subject: "Subscription Pre Expiry Notice", htmlContent, attachments });
 };
 
+
+const sendGracePeriodEmail = async (toEmail, toName, expiryDate) => {
+    const htmlContent = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h2>Hello ${toName},</h2>
+      <p>Your subscription expired on:</p>
+      <h1 style="color: #dc3545;">${expiryDate}</h1>
+      <p>You are now in a <strong>3-day grace period</strong>. During this time, you can still renew your subscription to avoid losing access to our services.</p>
+      <p>If auto-renewal is enabled, your payment will be processed automatically.</p>
+      <p>If not, please renew your package before the grace period ends to continue enjoying uninterrupted service.</p>
+      <br>
+      <p>Regards,<br>Thaalam Media Team</p>
+      <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
+    </div>
+  `;
+
+    const attachments = [
+        {
+            filename: "thaalam-logo.png",
+            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+            cid: "logoimage",
+        },
+    ];
+
+    return await sendEmail({
+        toEmail,
+        toName,
+        subject: "Subscription Grace Period Notice",
+        htmlContent,
+        attachments,
+    });
+};
+
 const sendPaymentReceiptEmail = async (toEmail, toName, packageName, amount, currency, receiptUrl) => {
     const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -172,6 +205,7 @@ module.exports = {
     verificationEmail,
     sendExpiryEmail,
     sendPreExpiryEmail,
+    sendGracePeriodEmail,
     sendPaymentReceiptEmail,
     generateOTP,
 };

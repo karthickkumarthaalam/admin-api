@@ -68,12 +68,17 @@ exports.getMemberDetails = async (req, res) => {
         }
 
         const memberPackage = await MemberPackage.findOne({
-            where: { member_id: member.id },
+            where: {
+                member_id: member.id,
+                status: {
+                    [Op.in]: ["active", "grace_period"]
+                }
+            },
             include: [
                 {
                     model: Package,
                     as: "package",
-                    attributes: ["id", "package_name", "price", "duration"],
+                    attributes: ["id", "package_name", "price", "duration", "features"],
                     include: [
                         {
                             model: Currency,
@@ -102,10 +107,14 @@ exports.getMemberDetails = async (req, res) => {
             gender: member.gender,
             address1: member.address1,
             address2: member.address2,
+            auto_renew: member.auto_renew,
         };
 
         if (memberPackage && memberPackage.package) {
+            response.package_status = memberPackage.status;
+            response.valid_till = memberPackage.end_date;
             response.package_name = memberPackage.package.package_name;
+            response.package_features = memberPackage.package.features || [];
             response.price = memberPackage.package.price;
             response.duration = memberPackage.package.duration;
             response.symbol = memberPackage.package.currency ? memberPackage.package.currency.symbol : null;

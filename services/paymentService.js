@@ -2,17 +2,31 @@ const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const db = require("../models");
 const { sendPaymentReceiptEmail } = require('../utils/sendEmail');
 
-const { Transaction, MemberPackage, Package } = db;
+const { Transaction, MemberPackage, Package, Members } = db;
 
-exports.createCheckoutSession = async (memberId, packageId, currency, duration) => {
+exports.createCheckoutSession = async (member, packageId, currency, duration, autoRenew) => {
     const packageData = await Package.findByPk(packageId);
     if (!packageData) throw new Error("Package not found");
 
-    const unitPrice = duration === 'year' ? packageData.yearly_price * 12 : packageData.price;
+    const unitPrice = duration === 'year' ? packageData.yearly_price : packageData.price;
+
+    let customerId = member?.stripe_customer_id;
+
+    if (!customerId) {
+        const customer = await stripe.customers.create({
+            email: member.email,
+            name: member.name
+        });
+
+        customerId = customer.id;
+
+        await member.update({ stripe_customer_id: customerId });
+    }
 
     const session = await stripe.checkout.sessions.create({
-        payment_method_types: ['card', 'twint'],
+        payment_method_types: autoRenew ? ['card'] : ['card'],
         mode: 'payment',
+        customer: customerId,
         line_items: [{
             price_data: {
                 currency: currency.toLowerCase(),
@@ -26,10 +40,14 @@ exports.createCheckoutSession = async (memberId, packageId, currency, duration) 
         }],
         payment_intent_data: {
             metadata: {
-                member_id: memberId,
+                member_id: member.id,
                 package_id: packageId,
-                duration: duration
+                duration: duration,
+                auto_renew: autoRenew
             },
+            ...autoRenew && {
+                setup_future_usage: 'off_session'
+            }
         },
         success_url: `${process.env.FRONTEND_URL}/payment_success`,
         cancel_url: `${process.env.FRONTEND_URL}/payment_failure`,
@@ -45,6 +63,9 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
 
         const { member_id, package_id, duration } = paymentIntent.metadata;
 
+        const member = await Members.findByPk(member_id, { transaction: t });
+        if (!member) throw new Error("Member not found");
+
         const pkg = await Package.findByPk(package_id, { transaction: t });
         if (!pkg) {
             throw new Error('Package not found');
@@ -59,7 +80,10 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
 
         if (transaction) {
             if (transaction.payment_status !== 'completed') {
-                await transaction.update({ payment_status: 'completed' }, { transaction: t });
+                await transaction.update({
+                    payment_status: 'completed',
+                    payment_proof: receiptUrl || null
+                }, { transaction: t });
             }
         } else {
             transaction = await Transaction.create({
@@ -105,7 +129,7 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
             }, { transaction: t });
         }
         await t.commit();
-        return { success: true, memberPackage, receiptUrl };
+        return { success: true, memberPackage, member, pkg, receiptUrl };
 
     } catch (error) {
         await t.rollback();
@@ -113,18 +137,8 @@ exports.handlePaymentSuccess = async (paymentIntentId) => {
     }
 };
 
-exports.sendRecieptToMember = async (paymentIntent, memberPackage, receiptUrl) => {
+exports.sendRecieptToMember = async (paymentIntent, member, pkg, receiptUrl) => {
     try {
-        const member = await db.Members.findOne({ where: { id: memberPackage.member_id } });
-        if (!member) {
-            throw new Error("Member not found");
-        }
-
-        const pkg = await Package.findByPk(memberPackage.package_id);
-        if (!pkg) {
-            throw new Error("Package not found");
-        }
-
         const amountPaid = (paymentIntent.amount_received / 100).toFixed(2);
         const currency = paymentIntent.currency;
 
