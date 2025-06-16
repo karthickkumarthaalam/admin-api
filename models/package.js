@@ -80,7 +80,6 @@ module.exports = (sequelize, DataTypes) => {
             as: "coupons"
         });
 
-
         Package.belongsTo(models.Currency, {
             foreignKey: "currency_id",
             as: "currency"
