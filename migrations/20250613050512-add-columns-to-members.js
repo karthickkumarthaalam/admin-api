@@ -9,17 +9,17 @@ module.exports = {
      * Example:
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
-    await queryInterface.addColumn('members', 'stripe_customer_id', {
+    await queryInterface.addColumn('Members', 'stripe_customer_id', {
       type: Sequelize.STRING,
       allowNull: true,
     });
 
-    await queryInterface.addColumn('members', 'payment_method_id', {
+    await queryInterface.addColumn('Members', 'payment_method_id', {
       type: Sequelize.STRING,
       allowNull: true,
     });
 
-    await queryInterface.addColumn('members', 'auto_renew', {
+    await queryInterface.addColumn('Members', 'auto_renew', {
       type: Sequelize.BOOLEAN,
       defaultValue: false
     });
@@ -32,8 +32,8 @@ module.exports = {
      * Example:
      * await queryInterface.dropTable('users');
      */
-    await queryInterface.removeColumn('members', 'stripe_customer_id');
-    await queryInterface.removeColumn('members', 'payment_method_id');
-    await queryInterface.removeColumn('members', 'auto_renew');
+    await queryInterface.removeColumn('Members', 'stripe_customer_id');
+    await queryInterface.removeColumn('Members', 'payment_method_id');
+    await queryInterface.removeColumn('Members', 'auto_renew');
   }
 };
