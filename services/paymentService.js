@@ -24,7 +24,7 @@ exports.createCheckoutSession = async (member, packageId, currency, duration, au
     }
 
     const session = await stripe.checkout.sessions.create({
-        payment_method_types: autoRenew ? ['card'] : ['card'],
+        payment_method_types: autoRenew ? ['card'] : ['card', 'twint'],
         mode: 'payment',
         customer: customerId,
         line_items: [{
