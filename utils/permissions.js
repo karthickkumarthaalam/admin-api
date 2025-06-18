@@ -4,4 +4,5 @@ module.exports = [
     "members",
     "coupons",
     "packages",
+    "banners",
 ];

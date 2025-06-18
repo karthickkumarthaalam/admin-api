@@ -107,7 +107,6 @@ exports.login = async (req, res) => {
             memberid: member.member_id,
         });
     } catch (error) {
-        console.error(error);
         return res.status(500).json({ status: "error", message: "Login failed", error: error.message });
     }
 };

@@ -106,7 +106,6 @@ exports.forgotPassword = async (req, res) => {
 
         // await sendZeptoMail(email, "admin", otp);
         await sendOtpEmail(email, "admin", otp).catch(err => {
-            console.error("Error sending email:", err);
             throw err;
         });
 

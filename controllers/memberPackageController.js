@@ -125,7 +125,6 @@ exports.getMemberDetails = async (req, res) => {
         res.status(200).json({ status: "success", items: [response] });
 
     } catch (error) {
-        console.error(error);
         res.status(500).json({ status: "error", message: "Failed to fetch member details", error: error.message });
     }
 };

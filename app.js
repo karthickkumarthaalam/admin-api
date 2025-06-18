@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./models");
 const cookieParser = require("cookie-parser");
+const path = require('path');
 require('dotenv').config();
 
 
@@ -45,6 +46,7 @@ const memberRoutes = require("./routes/membersRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
 const memberPackageRoutes = require("./routes/memberPackageRoutes");
 const transactionRouters = require("./routes/transactionRoutes");
+const bannerRoutes = require("./routes/bannerRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -54,6 +56,8 @@ app.use("/api/members", memberRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/memberPackage", memberPackageRoutes);
 app.use("/api/transactions", transactionRouters);
+app.use("/api/banners", bannerRoutes);
+app.use("/api/uploads", express.static(path.join(__dirname, 'uploads')));
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

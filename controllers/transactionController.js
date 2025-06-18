@@ -97,7 +97,6 @@ exports.getMemberPackageTransactions = async (req, res) => {
             items
         });
     } catch (error) {
-        console.error(error);
         return res.status(500).json({
             status: "error",
             message: "Failed to fetch package purchase report",
@@ -216,7 +215,6 @@ exports.rejectRefund = async (req, res) => {
         });
 
     } catch (error) {
-        console.error(error);
         res.status(500).json({
             status: "error",
             message: "Failed to reject refund request.",
