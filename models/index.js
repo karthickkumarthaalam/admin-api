@@ -34,6 +34,7 @@ db.Members = require("./members")(sequelize, Sequelize);
 db.MemberPackage = require("./memberPackage")(sequelize, Sequelize);
 db.Transaction = require("./transaction")(sequelize, Sequelize);
 db.Banner = require("./banner")(sequelize, Sequelize);
+db.Podcast = require("./podcast")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
     if (db[modelName].associate) {

@@ -2,8 +2,14 @@ const express = require('express');
 const router = express.Router();
 const bannerController = require('../controllers/bannerController');
 const uploadImages = require('../middlewares/uploadImages');
+const { authenticateToken, checkPermission } = require("../middlewares/authMiddleware");
 
-// Route to create a new banner
+router.get("/", bannerController.getAllBanner);
+router.get("/:id", bannerController.getBannerById);
+
+// router.use(authenticateToken);
+// router.use(checkPermission("banners"));
+
 router.post("/create", uploadImages("uploads/banners", {
     mode: "fields",
     fieldsConfig: [
@@ -12,8 +18,6 @@ router.post("/create", uploadImages("uploads/banners", {
     ]
 }), bannerController.createBanner);
 
-router.get("/", bannerController.getAllBanner);
-router.get("/:id", bannerController.getBannerById);
 router.patch("/:id", bannerController.updateBannerStatus);
 router.put("/:id", uploadImages("uploads/banners", {
     mode: "fields",

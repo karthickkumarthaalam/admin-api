@@ -47,6 +47,7 @@ const paymentRoutes = require("./routes/paymentRoutes");
 const memberPackageRoutes = require("./routes/memberPackageRoutes");
 const transactionRouters = require("./routes/transactionRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
+const podcastRoutes = require("./routes/podcastRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -58,6 +59,7 @@ app.use("/api/memberPackage", memberPackageRoutes);
 app.use("/api/transactions", transactionRouters);
 app.use("/api/banners", bannerRoutes);
 app.use("/api/uploads", express.static(path.join(__dirname, 'uploads')));
+app.use("/api/podcasts", podcastRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
