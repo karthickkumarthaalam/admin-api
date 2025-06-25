@@ -15,9 +15,6 @@ exports.createPodcast = async (req, res) => {
 
     try {
         const { title, description, rjname, content, date, status, language, tags } = req.body;
-        if (!imageFile) {
-            return res.status(400).json({ status: "error", message: "image is required" });
-        }
 
         if (!audioFile) {
             return res.status(400).json({ status: "error", message: "Audio file is required" });
@@ -36,7 +33,7 @@ exports.createPodcast = async (req, res) => {
             tags,
             duration: formattedDuration,
             language,
-            image_url: imageFile.path,
+            image_url: imageFile ? imageFile.path : null,
             audio_drive_file_id: null,
             audio_drive_file_link: null,
         });
@@ -68,7 +65,6 @@ exports.createPodcast = async (req, res) => {
     } catch (error) {
         if (audioFile && fs.existsSync(audioFile.path)) fs.unlinkSync(audioFile.path);
         if (imageFile && fs.existsSync(imageFile.path)) fs.unlinkSync(imageFile.path);
-        console.log(audioFile, "showing audio fileeeeeeee");
         res.status(500).json({
             status: "error",
             message: "Failed to create podcast",
