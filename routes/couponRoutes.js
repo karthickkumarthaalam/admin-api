@@ -5,8 +5,8 @@ const { verifyToken, checkPermission, authenticateToken } = require("../middlewa
 
 router.get('/coupon-report', verifyToken, couponController.getMemberCoupons);
 
-router.use(authenticateToken);
-router.use(checkPermission("coupons"));
+// router.use(authenticateToken);
+// router.use(checkPermission("coupons"));
 
 router.post("/", couponController.createCoupon);
 router.get("/", couponController.getCoupons);
