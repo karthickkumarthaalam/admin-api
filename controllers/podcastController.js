@@ -1,7 +1,7 @@
 const db = require("../models");
 const { google } = require("googleapis");
 const rangeParser = require("range-parser");
-const Podcast = db.Podcast;
+const { Podcast, PodcastComment, Members } = db;
 const fs = require("fs");
 const { Op, literal } = require("sequelize");
 const { getAudioDurationInSeconds } = require("get-audio-duration");
@@ -110,8 +110,33 @@ exports.getAllPodcasts = async (req, res) => {
             page,
             limit,
             where,
-            order: [["id", "DESC"]],
+            order: [["date", "DESC"]],
         });
+
+        const podcastIds = result.data.map(p => p.id);
+        if (podcastIds.length > 0) {
+            const reactionCounts = await db.sequelize.query(`
+        SELECT podcast_id, reaction, COUNT(*) as count
+        FROM podcast_reactions
+        WHERE podcast_id IN (:podcastIds)
+        GROUP BY podcast_id, reaction
+      `, {
+                replacements: { podcastIds },
+                type: db.Sequelize.QueryTypes.SELECT
+            });
+
+            const reactionMap = {};
+            if (reactionCounts && reactionCounts.length > 0) {
+                reactionCounts.forEach(rc => {
+                    if (!reactionMap[rc.podcast_id]) reactionMap[rc.podcast_id] = {};
+                    reactionMap[rc.podcast_id][rc.reaction] = parseInt(rc.count);
+                });
+            }
+
+            result.data.forEach(podcast => {
+                podcast.dataValues.reactions = reactionMap[podcast.id] || {};
+            });
+        }
 
         res.status(200).json({
             status: "success",
@@ -129,15 +154,49 @@ exports.getAllPodcasts = async (req, res) => {
 
 exports.getPodcastById = async (req, res) => {
     try {
-        const podcast = await Podcast.findByPk(req.params.id);
+        const podcast = await Podcast.findByPk(req.params.id, {
+            include: [
+                {
+                    model: PodcastComment,
+                    where: {
+                        status: "approved"
+                    },
+                    required: false,
+                    include: [{
+                        model: Members,
+                        attributes: ["id", "name"]
+                    }],
+                    order: [["created_at", "DESC"]]
+                }
+            ]
+        });
+
         if (!podcast) {
             return res.status(404).json({ status: "error", message: "Podcast not found" });
+        }
+
+        const reactionCounts = await db.sequelize.query(
+            `SELECT reaction, COUNT(*) as count
+   FROM podcast_reactions
+   WHERE podcast_id = :podcastId
+   GROUP BY reaction`, {
+            replacements: { podcastId: req.params.id },
+            type: db.Sequelize.QueryTypes.SELECT
+        }
+        );
+
+        const reactionSummary = {};
+        if (reactionCounts && reactionCounts.length > 0) {
+            reactionCounts.forEach(row => {
+                reactionSummary[row.reaction] = row.count;
+            });
         }
 
         res.status(200).json({
             status: "success",
             message: "Podcast fetched successfully",
             podcast,
+            reaction: reactionSummary || {}
         });
     } catch (error) {
         res.status(500).json({

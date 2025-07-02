@@ -85,6 +85,8 @@ module.exports = (sequalize, DataTypes) => {
 
     Members.associate = (models) => {
         Members.hasOne(models.MemberPackage, { foreignKey: "member_id" });
+        Members.hasMany(models.PodcastComment, { foreignKey: "member_id" });
+        Members.hasMany(models.PodcastReaction, { foreignKey: "member_id" });
     };
 
 

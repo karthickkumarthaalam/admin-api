@@ -87,5 +87,11 @@ module.exports = (sequelize, DataTypes) => {
         timestamps: false,
     });
 
+
+    Podcast.associate = (models) => {
+        Podcast.hasMany(models.PodcastComment, { foreignKey: "podcast_id" });
+        Podcast.hasMany(models.PodcastReaction, { foreignKey: "podcast_id" });
+    };
+
     return Podcast;
 };
