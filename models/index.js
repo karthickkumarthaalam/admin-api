@@ -37,6 +37,7 @@ db.Banner = require("./banner")(sequelize, Sequelize);
 db.Podcast = require("./podcast")(sequelize, Sequelize);
 db.PodcastComment = require("./podcastComment")(sequelize, Sequelize);
 db.PodcastReaction = require("./podcastReaction")(sequelize, Sequelize);
+db.PopupBanner = require("./popupBanner")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
     if (db[modelName].associate) {
