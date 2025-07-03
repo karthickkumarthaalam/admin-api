@@ -67,7 +67,7 @@ exports.updateCommentStatus = async (req, res) => {
         const { comment_id } = req.params;
         const { status } = req.body;
 
-        if (!["approved", "rejected"].includes(status)) {
+        if (!["approved", "rejected", "pending"].includes(status)) {
             return res.status(400).json({ status: "error", message: "Invalid status" });
         }
 

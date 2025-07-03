@@ -12,6 +12,7 @@ router.post("/comments", podcastCommentController.addComment);
 router.get("/comments", podcastCommentController.commentList);
 router.patch("/comments/:comment_id/status", podcastCommentController.updateCommentStatus);
 router.get("/:id/comments", podcastCommentController.getCommentByPodcast);
+router.delete("/:comment_id/comments", podcastCommentController.deleteComment);
 
 // Public
 router.get("/", podcastController.getAllPodcasts);
