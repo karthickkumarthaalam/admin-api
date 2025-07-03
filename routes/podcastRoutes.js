@@ -14,15 +14,16 @@ router.patch("/comments/:comment_id/status", podcastCommentController.updateComm
 router.get("/:id/comments", podcastCommentController.getCommentByPodcast);
 router.delete("/:comment_id/comments", podcastCommentController.deleteComment);
 
+//reaction 
+router.post("/reaction", podcastReactionController.addorupdateReaction);
+router.get("/:podcastId/reactions", podcastReactionController.getReactionCountsByPodcastId);
+router.get("/reaction-stats", podcastController.getPodcastReactions);
+
+
 // Public
 router.get("/", podcastController.getAllPodcasts);
 router.get("/:id", podcastController.getPodcastById);
 router.get("/stream-audio/:fileId", podcastController.streamAudioFromDrive);
-
-
-//reaction 
-router.post("/reaction", podcastReactionController.addorupdateReaction);
-router.get("/:podcastId/reactions", podcastReactionController.getReactionCountsByPodcastId);
 
 router.post(
     "/create",

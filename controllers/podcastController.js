@@ -234,6 +234,35 @@ exports.updatePodcastStatus = async (req, res) => {
         });
     }
 };
+exports.getPodcastReactions = async (req, res) => {
+    const { page = 1, limit = 20 } = req.query;
+    const offset = (page - 1) * limit;
+
+    try {
+        const [data] = await db.sequelize.query(`
+      SELECT 
+        p.id, 
+        p.title, 
+        p.rjname,
+        (SELECT COUNT(*) FROM podcast_reactions r WHERE r.podcast_id = p.id AND r.reaction = 'like') AS likes,
+        (SELECT COUNT(*) FROM podcast_comments c WHERE c.podcast_id = p.id) AS comments
+      FROM podcasts p
+      ORDER BY p.id DESC
+      LIMIT ${limit} OFFSET ${offset}
+    `);
+
+        const [[{ total }]] = await db.sequelize.query(`SELECT COUNT(*) as total FROM podcasts`);
+
+        res.status(200).json({
+            status: "success",
+            data,
+            totalRecords: total
+        });
+    } catch (err) {
+        res.status(500).json({ status: "error", message: err.message });
+    }
+};
+
 
 exports.updatePodcast = async (req, res) => {
     const imageFile = req.files["image"] ? req.files["image"][0] : null;
