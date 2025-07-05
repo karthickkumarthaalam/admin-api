@@ -198,6 +198,45 @@ const sendPaymentReceiptEmail = async (toEmail, toName, packageName, amount, cur
     });
 };
 
+const sendRjPasswordEmail = async (toEmail, toName, plainPassword) => {
+    const htmlContent = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+      <h2>Hi ${toName},</h2>
+      <p>Welcome to <strong>Thaalam Media</strong>!</p>
+      <p>Your RJ profile has been successfully created. Here are your login credentials:</p>
+      
+      <p><strong>Email:</strong> ${toEmail}</p>
+      <p><strong>Password:</strong> ${plainPassword}</p>
+
+      <p>You can now log in to your RJ dashboard and manage your profile and content.</p>
+
+      <a href="https://thaalam.ch/A8J3K9Z5QW" style="display:inline-block;padding:10px 20px;background-color:#cc0000;color:white;border-radius:4px;text-decoration:none;">Login Now</a>
+
+      <br><br>
+      <p>Please keep this information safe and secure.</p>
+      <p>Regards,<br>Thaalam Media Team</p>
+
+      <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
+    </div>
+  `;
+
+    const attachments = [
+        {
+            filename: "thaalam-logo.png",
+            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+            cid: "logoimage",
+        },
+    ];
+
+    return await sendEmail({
+        toEmail,
+        subject: "Your RJ Profile Credentials - Thaalam Media",
+        htmlContent,
+        attachments,
+    });
+};
+
+
 
 module.exports = {
     sendEmail,
@@ -208,4 +247,5 @@ module.exports = {
     sendGracePeriodEmail,
     sendPaymentReceiptEmail,
     generateOTP,
+    sendRjPasswordEmail
 };

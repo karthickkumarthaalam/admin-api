@@ -69,7 +69,7 @@ exports.login = async (req, res) => {
 
         res.status(200).json({
             message: "Login successful", user: {
-                id: user.id, email: user.email, acl: userAcl
+                id: user.id, email: user.email, role: user.role, acl: userAcl
             }
         });
 
@@ -104,7 +104,6 @@ exports.forgotPassword = async (req, res) => {
 
         await user.save();
 
-        // await sendZeptoMail(email, "admin", otp);
         await sendOtpEmail(email, "admin", otp).catch(err => {
             throw err;
         });
