@@ -9,7 +9,7 @@ module.exports = {
      * Example:
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
-    await queryInterface.addColumn("users", "role", {
+    await queryInterface.addColumn("Users", "role", {
       type: Sequelize.ENUM('admin', 'rj'),
       allowNull: false,
       defaultValue: 'admin'
@@ -23,6 +23,6 @@ module.exports = {
      * Example:
      * await queryInterface.dropTable('users');
      */
-    await queryInterface.removeColumn('users', 'role');
+    await queryInterface.removeColumn('Users', 'role');
   }
 };
