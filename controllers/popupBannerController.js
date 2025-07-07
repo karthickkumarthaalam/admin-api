@@ -11,7 +11,7 @@ const deleteFileIfExists = (filePath) => {
 
 exports.createOrUpdateBanner = async (req, res) => {
     try {
-        const { language } = req.body;
+        const { language, status } = req.body;
         const websiteImage = req.files["website_image"] ? req.files["website_image"][0].path : null;
         const mobileImage = req.files["mobile_image"] ? req.files["mobile_image"][0].path : null;
 
@@ -48,7 +48,7 @@ exports.createOrUpdateBanner = async (req, res) => {
             popupBanner = await PopupBanner.create({
                 website_image: websiteImage,
                 mobile_image: mobileImage,
-                status: "active",
+                status: status || "active",
                 language: parsedLanguage,
             });
 
@@ -97,7 +97,17 @@ exports.deleteBanner = async (req, res) => {
 
 exports.listBanners = async (req, res) => {
     try {
-        const banners = await PopupBanner.findAll();
+        const { status } = req.query;
+
+        const whereConditions = {};
+        if (status) {
+            whereConditions.status = status;
+        }
+
+        const banners = await PopupBanner.findAll({
+            where: whereConditions
+        });
+
         return res.status(200).json({
             status: "success",
             data: banners,
