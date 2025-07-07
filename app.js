@@ -50,6 +50,7 @@ const bannerRoutes = require("./routes/bannerRoutes");
 const podcastRoutes = require("./routes/podcastRoutes");
 const popupBannerRoutes = require("./routes/popupBannerRoutes");
 const rjProfileRoutes = require("./routes/rjProfileRoutes");
+const shareRoutes = require("./routes/shareRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -64,6 +65,7 @@ app.use("/api/uploads", express.static(path.join(__dirname, 'uploads')));
 app.use("/api/podcasts", podcastRoutes);
 app.use("/api/popup-banner", popupBannerRoutes);
 app.use("/api/rj-profile", rjProfileRoutes);
+app.use("/share", shareRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
