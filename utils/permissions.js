@@ -6,5 +6,6 @@ module.exports = [
     "packages",
     "banners",
     "podcasts",
-    "programs"
+    "programs",
+    "agreements"
 ];

@@ -51,6 +51,7 @@ const podcastRoutes = require("./routes/podcastRoutes");
 const popupBannerRoutes = require("./routes/popupBannerRoutes");
 const rjProfileRoutes = require("./routes/rjProfileRoutes");
 const shareRoutes = require("./routes/shareRoutes");
+const agreementRoutes = require("./routes/agreementRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -66,6 +67,7 @@ app.use("/api/podcasts", podcastRoutes);
 app.use("/api/popup-banner", popupBannerRoutes);
 app.use("/api/rj-profile", rjProfileRoutes);
 app.use("/share", shareRoutes);
+app.use("/api/agreements", agreementRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
