@@ -52,6 +52,7 @@ const popupBannerRoutes = require("./routes/popupBannerRoutes");
 const rjProfileRoutes = require("./routes/rjProfileRoutes");
 const shareRoutes = require("./routes/shareRoutes");
 const agreementRoutes = require("./routes/agreementRoutes");
+const passwordManagerRoutes = require("./routes/passwordManagerRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -68,6 +69,7 @@ app.use("/api/popup-banner", popupBannerRoutes);
 app.use("/api/rj-profile", rjProfileRoutes);
 app.use("/share", shareRoutes);
 app.use("/api/agreements", agreementRoutes);
+app.use("/api/passwords", passwordManagerRoutes);
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
