@@ -208,7 +208,7 @@ const sendRjPasswordEmail = async (toEmail, toName, plainPassword) => {
       <p><strong>Email:</strong> ${toEmail}</p>
       <p><strong>Password:</strong> ${plainPassword}</p>
 
-      <p>You can now log in to your RJ dashboard and manage your profile and content.</p>
+      <p>You can now log in to Admin dashboard and manage your profile and content.</p>
 
       <a href="https://thaalam.ch/A8J3K9Z5QW" style="display:inline-block;padding:10px 20px;background-color:#cc0000;color:white;border-radius:4px;text-decoration:none;">Login Now</a>
 

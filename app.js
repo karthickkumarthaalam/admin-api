@@ -49,10 +49,14 @@ const transactionRouters = require("./routes/transactionRoutes");
 const bannerRoutes = require("./routes/bannerRoutes");
 const podcastRoutes = require("./routes/podcastRoutes");
 const popupBannerRoutes = require("./routes/popupBannerRoutes");
-const rjProfileRoutes = require("./routes/rjProfileRoutes");
 const shareRoutes = require("./routes/shareRoutes");
 const agreementRoutes = require("./routes/agreementRoutes");
 const passwordManagerRoutes = require("./routes/passwordManagerRoutes");
+const radioStationRoutes = require("./routes/radioStationRoutes");
+const programCategoryRoutes = require("./routes/programCategoryRoutes");
+const departmentRoutes = require("./routes/departmentRoutes");
+const systemUsersRoutes = require("./routes/systemUserRoutes");
+const radioProgramRoutes = require("./routes/radioProgramRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -66,10 +70,15 @@ app.use("/api/banners", bannerRoutes);
 app.use("/api/uploads", express.static(path.join(__dirname, 'uploads')));
 app.use("/api/podcasts", podcastRoutes);
 app.use("/api/popup-banner", popupBannerRoutes);
-app.use("/api/rj-profile", rjProfileRoutes);
 app.use("/share", shareRoutes);
 app.use("/api/agreements", agreementRoutes);
 app.use("/api/passwords", passwordManagerRoutes);
+app.use("/api/radio-station", radioStationRoutes);
+app.use("/api/program-category", programCategoryRoutes);
+app.use("/api/departments", departmentRoutes);
+app.use("/api/system-user", systemUsersRoutes);
+app.use("/api/radio-program", radioProgramRoutes);
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {

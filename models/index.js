@@ -38,10 +38,14 @@ db.Podcast = require("./podcast")(sequelize, Sequelize);
 db.PodcastComment = require("./podcastComment")(sequelize, Sequelize);
 db.PodcastReaction = require("./podcastReaction")(sequelize, Sequelize);
 db.PopupBanner = require("./popupBanner")(sequelize, Sequelize);
-db.RjProfile = require("./rjProfile")(sequelize, Sequelize);
+db.SystemUsers = require("./systemUser")(sequelize, Sequelize);
 db.Agreement = require("./agreement")(sequelize, Sequelize);
 db.PasswordManager = require("./passwordManager")(sequelize, Sequelize);
 db.PasswordManagerAccess = require("./passwordManagerAccess")(sequelize, Sequelize);
+db.RadioStation = require("./radioStation")(sequelize, Sequelize);
+db.ProgramCategory = require("./programCategory")(sequelize, Sequelize);
+db.Department = require("./department")(sequelize, Sequelize);
+db.RadioProgram = require("./radioProgram")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
     if (db[modelName].associate) {
