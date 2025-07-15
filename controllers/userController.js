@@ -2,9 +2,8 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const db = require("../models");
 const { generateOTP, sendOtpEmail } = require("../utils/sendEmail");
-const permissions = require("../utils/permissions");
 
-const { User } = db;
+const { User, SystemUsers, UserPermission, Module } = db;
 
 exports.signup = async (req, res) => {
     const { email, password, confirmPassword, acl } = req.body;
@@ -54,25 +53,70 @@ exports.login = async (req, res) => {
             return res.status(400).json({ message: "Invalid email or password" });
         }
 
-        let userAcl = user.acl;
-        if (email === "admin") {
-            userAcl = permissions;
+        const systemUser = await SystemUsers.findOne({
+            where: {
+                user_id: user.id
+            }
+        });
+
+        let userPermissions = [];
+
+        if (systemUser) {
+            const permissions = await UserPermission.findAll({
+                where: { system_user_id: systemUser.id },
+                include: [
+                    {
+                        model: Module,
+                        as: "module",
+                        attributes: ["id", "name"]
+                    }
+                ]
+            });
+
+            const groupedPermissions = permissions.reduce((acc, perm) => {
+                const modId = perm.module_id;
+                const modName = perm.module ? perm.module.name : "";
+
+                if (!acc[modId]) {
+                    acc[modId] = {
+                        module_id: modId,
+                        module_name: modName,
+                        access_type: []
+                    };
+                }
+
+                acc[modId].access_type.push(perm.access_type);
+                return acc;
+            }, {});
+
+            userPermissions = Object.values(groupedPermissions);
         }
-        const token = jwt.sign({ id: user.id, email: user.email, acl: userAcl }, process.env.JWT_SECRET, { expiresIn: '30m' });
+
+        const token = jwt.sign(
+            {
+                if: user.id,
+                email: user.email,
+                permissions: userPermissions
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: "1d" }
+        );
 
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 30 * 60 * 1000
+            maxAge: 24 * 60 * 60 * 1000
         });
 
         res.status(200).json({
-            message: "Login successful", user: {
-                id: user.id, email: user.email, role: user.role, acl: userAcl
+            message: "Login successful",
+            user: {
+                id: user.id,
+                email: user.email,
+                permissions: userPermissions
             }
         });
-
     } catch (error) {
         res.status(500).json({ mesaage: "Login failed", error: error.message });
     }

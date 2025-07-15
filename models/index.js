@@ -46,6 +46,8 @@ db.RadioStation = require("./radioStation")(sequelize, Sequelize);
 db.ProgramCategory = require("./programCategory")(sequelize, Sequelize);
 db.Department = require("./department")(sequelize, Sequelize);
 db.RadioProgram = require("./radioProgram")(sequelize, Sequelize);
+db.Module = require("./module")(sequelize, Sequelize);
+db.UserPermission = require("./userPermission")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
     if (db[modelName].associate) {

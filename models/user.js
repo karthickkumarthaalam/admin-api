@@ -21,21 +21,6 @@ module.exports = (sequelize, DataTypes) => {
         otpExpiresAt: {
             type: DataTypes.DATE,
             allowNull: true,
-        },
-        role: {
-            type: DataTypes.ENUM("admin", "rj"),
-            defaultValue: "admin",
-        },
-        acl: {
-            type: DataTypes.TEXT,
-            allowNull: true,
-            get() {
-                const value = this.getDataValue('acl');
-                return value ? JSON.parse(value) : [];
-            },
-            set(value) {
-                this.setDataValue('acl', JSON.stringify(value));
-            }
         }
     });
 

@@ -57,6 +57,9 @@ const programCategoryRoutes = require("./routes/programCategoryRoutes");
 const departmentRoutes = require("./routes/departmentRoutes");
 const systemUsersRoutes = require("./routes/systemUserRoutes");
 const radioProgramRoutes = require("./routes/radioProgramRoutes");
+const moduleRoutes = require("./routes/moduleRoutes");
+const userPermissionRoutes = require("./routes/userPermissionsRoutes");
+
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -78,6 +81,8 @@ app.use("/api/program-category", programCategoryRoutes);
 app.use("/api/departments", departmentRoutes);
 app.use("/api/system-user", systemUsersRoutes);
 app.use("/api/radio-program", radioProgramRoutes);
+app.use("/api/modules", moduleRoutes);
+app.use("/api/user-permissions", userPermissionRoutes);
 
 
 const PORT = process.env.PORT || 3001;
