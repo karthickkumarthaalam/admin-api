@@ -11,7 +11,19 @@ oauth2Client.setCredentials({
     refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
 });
 
-const drive = google.drive({ version: "v3", auth: oauth2Client });
+oauth2Client.on("tokens", (tokens) => {
+    if (tokens.refresh_token) {
+        console.log("🔁 New Refresh Token:", tokens.refresh_token);
+    }
+    if (tokens.access_token) {
+        console.log("🔓 New Access Token:", tokens.access_token);
+    }
+});
+
+const drive = google.drive({
+    version: "v3",
+    auth: oauth2Client,
+});
 
 async function uploadAudioFile(buffer, fileName, folderId) {
     const bufferStream = new stream.PassThrough();
@@ -44,13 +56,6 @@ async function uploadAudioFile(buffer, fileName, folderId) {
     return response.data;
 }
 
-async function deleteAudioFile(fileId) {
-    try {
-        await drive.files.delete({ fileId });
-    } catch (error) {
-        throw error;
-    }
-}
 
 async function uploadPdfFile(buffer, fileName, folderId) {
 
@@ -84,18 +89,18 @@ async function uploadPdfFile(buffer, fileName, folderId) {
     return response.data;
 }
 
-
-async function deletePdfFile(fileId) {
+async function deleteFile(fileId) {
     try {
         await drive.files.delete({ fileId });
     } catch (error) {
+        console.error("❌ Failed to delete file:", error.message);
         throw error;
     }
 }
 
 module.exports = {
     uploadAudioFile,
-    deleteAudioFile,
     uploadPdfFile,
-    deletePdfFile,
+    deleteAudioFile: deleteFile,
+    deletePdfFile: deleteFile,
 };
