@@ -1,28 +1,33 @@
 const { google } = require("googleapis");
 const stream = require("stream");
 
-const oauth2Client = new google.auth.OAuth2(
-    process.env.GOOGLE_CLIENT_ID,
-    process.env.GOOGLE_CLIENT_SECRET,
-    "https://developers.google.com/oauthplayground"
-);
+// const oauth2Client = new google.auth.OAuth2(
+//     process.env.GOOGLE_CLIENT_ID,
+//     process.env.GOOGLE_CLIENT_SECRET,
+//     "https://developers.google.com/oauthplayground"
+// );
 
-oauth2Client.setCredentials({
-    refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
-});
+// oauth2Client.setCredentials({
+//     refresh_token: process.env.GOOGLE_REFRESH_TOKEN,
+// });
 
-oauth2Client.on("tokens", (tokens) => {
-    if (tokens.refresh_token) {
-        console.log("🔁 New Refresh Token:", tokens.refresh_token);
-    }
-    if (tokens.access_token) {
-        console.log("🔓 New Access Token:", tokens.access_token);
-    }
+// oauth2Client.on("tokens", (tokens) => {
+//     if (tokens.refresh_token) {
+//         console.log("🔁 New Refresh Token:", tokens.refresh_token);
+//     }
+//     if (tokens.access_token) {
+//         console.log("🔓 New Access Token:", tokens.access_token);
+//     }
+// });
+
+const auth = new google.auth.GoogleAuth({
+    keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_PATH,
+    scopes: ["https://www.googleapis.com/auth/drive"],
 });
 
 const drive = google.drive({
     version: "v3",
-    auth: oauth2Client,
+    auth,
 });
 
 async function uploadAudioFile(buffer, fileName, folderId) {
