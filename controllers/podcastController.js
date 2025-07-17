@@ -302,7 +302,9 @@ exports.updatePodcast = async (req, res) => {
         if (audioFile) {
             (async () => {
                 try {
-                    await deleteAudioFile(podcast.audio_drive_file_id);
+                    if (podcast.audio_drive_file_id) {
+                        await deleteAudioFile(podcast.audio_drive_file_id);
+                    }
 
                     const audioBuffer = fs.readFileSync(audioFile.path);
                     const audioUpload = await uploadAudioFile(
