@@ -59,7 +59,9 @@ const systemUsersRoutes = require("./routes/systemUserRoutes");
 const radioProgramRoutes = require("./routes/radioProgramRoutes");
 const moduleRoutes = require("./routes/moduleRoutes");
 const userPermissionRoutes = require("./routes/userPermissionsRoutes");
-
+const expenseRoutes = require("./routes/expenseRoutes");
+const paidThroughRoutes = require("./routes/paidThroughRoutes");
+const paymentModeRoutes = require("./routes/paymentModeRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -83,6 +85,9 @@ app.use("/api/system-user", systemUsersRoutes);
 app.use("/api/radio-program", radioProgramRoutes);
 app.use("/api/modules", moduleRoutes);
 app.use("/api/user-permissions", userPermissionRoutes);
+app.use("/api/expense", expenseRoutes);
+app.use("/api/paid-through", paidThroughRoutes);
+app.use("/api/payment-mode", paymentModeRoutes);
 
 
 const PORT = process.env.PORT || 3001;

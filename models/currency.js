@@ -26,6 +26,10 @@ module.exports = (sequelize, DataTypes) => {
 
     Currency.associate = (models) => {
         Currency.hasMany(models.Package, { foreignKey: "currency_id" });
+        Currency.hasMany(models.ExpenseCategory, {
+            foreignKey: "currency_id",
+            as: "expenseCategories"
+        });
     };
 
     return Currency;
