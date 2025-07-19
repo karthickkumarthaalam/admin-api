@@ -62,6 +62,8 @@ const userPermissionRoutes = require("./routes/userPermissionsRoutes");
 const expenseRoutes = require("./routes/expenseRoutes");
 const paidThroughRoutes = require("./routes/paidThroughRoutes");
 const paymentModeRoutes = require("./routes/paymentModeRoutes");
+const merchantRoutes = require("./routes/merchantRoutes");
+const categoryRoutes = require("./routes/categoryRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -88,6 +90,8 @@ app.use("/api/user-permissions", userPermissionRoutes);
 app.use("/api/expense", expenseRoutes);
 app.use("/api/paid-through", paidThroughRoutes);
 app.use("/api/payment-mode", paymentModeRoutes);
+app.use("/api/merchant", merchantRoutes);
+app.use("/api/category", categoryRoutes);
 
 
 const PORT = process.env.PORT || 3001;

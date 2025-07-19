@@ -52,6 +52,8 @@ db.Expenses = require("./expense")(sequelize, Sequelize);
 db.ExpenseCategory = require("./expenseCategory")(sequelize, Sequelize);
 db.PaidThrough = require("./paidThrough")(sequelize, Sequelize);
 db.PaymentMode = require("./paymentMode")(sequelize, Sequelize);
+db.Merchant = require("./merchant")(sequelize, Sequelize);
+db.Category = require("./category")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
     if (db[modelName].associate) {
