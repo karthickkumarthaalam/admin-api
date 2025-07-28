@@ -54,6 +54,13 @@ db.PaidThrough = require("./paidThrough")(sequelize, Sequelize);
 db.PaymentMode = require("./paymentMode")(sequelize, Sequelize);
 db.Merchant = require("./merchant")(sequelize, Sequelize);
 db.Category = require("./category")(sequelize, Sequelize);
+db.BudgetCategory = require("./budgetCategory")(sequelize, Sequelize);
+db.Budget = require("./budget")(sequelize, Sequelize);
+db.BudgetItem = require("./budgetItem")(sequelize, Sequelize);
+db.BudgetTaxes = require("./budgetTaxes")(sequelize, Sequelize);
+db.BudgetTaxApplication = require("./budgetTaxApplication")(sequelize, Sequelize);
+db.BudgetMerchant = require("./budgetMerchant")(sequelize, Sequelize);
+db.BudgetUnits = require("./budgetUnits")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
     if (db[modelName].associate) {

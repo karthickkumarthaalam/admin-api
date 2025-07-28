@@ -21,6 +21,10 @@ module.exports = (sequelize, DataTypes) => {
         otpExpiresAt: {
             type: DataTypes.DATE,
             allowNull: true,
+        },
+        role: {
+            type: DataTypes.ENUM("admin", "user"),
+            defaultValue: "user",
         }
     });
 

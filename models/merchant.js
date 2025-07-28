@@ -9,8 +9,24 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.STRING,
             allowNull: false,
             unique: true
+        },
+        created_by: {
+            type: DataTypes.INTEGER,
+            references: {
+                model: "Users",
+                key: "id"
+            },
+            onDelete: "CASCADE"
         }
     });
+
+    Merchant.associate = (models) => {
+        Merchant.belongsTo(models.SystemUsers, {
+            foreignKey: "created_by",
+            targetKey: "user_id",
+            as: "creator"
+        });
+    };
 
     return Merchant;
 };

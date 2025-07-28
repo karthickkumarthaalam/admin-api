@@ -1,32 +1,35 @@
+
 module.exports = (sequelize, DataTypes) => {
-    const Category = sequelize.define("Category", {
+    const BudgetMerchant = sequelize.define("BudgetMerchant", {
         id: {
             type: DataTypes.INTEGER,
             autoIncrement: true,
             primaryKey: true
         },
-        category_name: {
+        merchant_name: {
             type: DataTypes.STRING,
-            allowNull: false,
-            unique: true
+            allowNull: false
         },
         created_by: {
             type: DataTypes.INTEGER,
-            reference: {
+            allowNull: false,
+            references: {
                 model: "Users",
                 key: "id"
             },
             onDelete: "CASCADE"
         }
+    }, {
+        tableName: "budget_merchants"
     });
 
-    Category.associate = (models) => {
-        Category.belongsTo(models.SystemUsers, {
+    BudgetMerchant.associate = (models) => {
+        BudgetMerchant.belongsTo(models.SystemUsers, {
             foreignKey: "created_by",
             targetKey: "user_id",
             as: "creator"
         });
     };
 
-    return Category;
+    return BudgetMerchant;
 };

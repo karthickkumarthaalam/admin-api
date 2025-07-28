@@ -11,7 +11,8 @@ exports.createMerchant = async (req, res) => {
 
         const existingMerchant = await Merchant.findOne({
             where: {
-                merchant_name: merchant_name
+                merchant_name: merchant_name,
+                created_by: req.user.id
             }
         });
 
@@ -20,7 +21,8 @@ exports.createMerchant = async (req, res) => {
         }
 
         const merchant = await Merchant.create({
-            merchant_name
+            merchant_name,
+            created_by: req.user.id
         });
 
         return res.status(201).json({ status: "success", message: "Merchant created successfully", data: merchant });
@@ -33,8 +35,17 @@ exports.createMerchant = async (req, res) => {
 
 exports.listMerchantName = async (req, res) => {
     try {
+        const { role, id } = req.user;
 
-        const list = await Merchant.findAll();
+        const whereCondition = {};
+
+        if (role !== "admin") {
+            whereCondition.created_by = id;
+        }
+
+        const list = await Merchant.findAll({
+            where: whereCondition
+        });
 
         return res.status(200).json({
             status: "success",

@@ -30,6 +30,10 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: "currency_id",
             as: "expenseCategories"
         });
+        Currency.belongsTo(models.Budget, {
+            foreignKey: "currency_id",
+            as: "budgetItems"
+        });
     };
 
     return Currency;

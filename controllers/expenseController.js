@@ -1,7 +1,7 @@
 const fs = require("fs");
 const db = require("../models");
 const { Op, fn, col, where } = require("sequelize");
-const { Expenses, ExpenseCategory, PaidThrough, PaymentMode, Currency } = db;
+const { Expenses, ExpenseCategory, PaidThrough, PaymentMode, Currency, SystemUsers } = db;
 const pagination = require("../utils/pagination");
 const { deletePdfFile, uploadPdfFile } = require("../services/googleDriveService");
 
@@ -77,7 +77,8 @@ exports.createExpenseWithCategories = async (req, res) => {
             vendor_type,
             status,
             completed_date,
-            pending_amount: status === "pending" ? total_amount : 0
+            pending_amount: status === "pending" ? total_amount : 0,
+            created_by: req.user.id
         };
 
         if (status === "completed") {
@@ -125,10 +126,16 @@ exports.getAllExpenses = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
         const search = req.query.search || "";
-        const month = req.query.month; // Expect "07"
-        const year = req.query.year;   // Expect "2025"
+        const month = req.query.month;
+        const year = req.query.year;
+
+        const { role, id } = req.user;
 
         const whereCondition = {};
+
+        if (role !== "admin") {
+            whereCondition.created_by = id;
+        }
 
         // Search condition
         if (search) {
@@ -170,6 +177,11 @@ exports.getAllExpenses = async (req, res) => {
                             attributes: ["currency_name", "symbol"],
                         },
                     ],
+                },
+                {
+                    model: SystemUsers,
+                    as: "creator",
+                    attributes: ["name", "email"],
                 },
             ],
             order: [["createdAt", "DESC"]],
@@ -213,7 +225,7 @@ exports.getExpenseById = async (req, res) => {
             return res.status(404).json({ error: "Expense not found" });
         }
 
-        res.status(200).json(expense);
+        res.status(200).json({ status: "success", message: "Expense Fetched Successfully", expense });
 
     } catch (error) {
         res.status(500).json({ status: "error", message: "Failed to fetch Expense", error: error.message });

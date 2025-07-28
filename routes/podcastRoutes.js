@@ -4,7 +4,6 @@ const podcastController = require("../controllers/podcastController");
 const podcastUpload = require("../middlewares/uploadPodcastFiles");
 const podcastCommentController = require("../controllers/podcastCommentController");
 const podcastReactionController = require("../controllers/podcastReactionController");
-const { authenticateToken, checkPermission } = require("../middlewares/authMiddleware");
 
 
 //comment

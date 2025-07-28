@@ -64,6 +64,11 @@ const paidThroughRoutes = require("./routes/paidThroughRoutes");
 const paymentModeRoutes = require("./routes/paymentModeRoutes");
 const merchantRoutes = require("./routes/merchantRoutes");
 const categoryRoutes = require("./routes/categoryRoutes");
+const budgetCategoryRoutes = require("./routes/budgetCategoryRoutes");
+const budgetRoutes = require("./routes/budgetRoutes");
+const budgetTaxesRoutes = require("./routes/budgetTaxesRoutes");
+const budgetMerchantRoutes = require("./routes/budgetMerchantRoutes");
+const budgetUnitsRoutes = require("./routes/budgetUnitsRoutes");
 
 app.use("/api/auth", userRoutes);
 app.use("/api/coupons", couponRoutes);
@@ -92,6 +97,11 @@ app.use("/api/paid-through", paidThroughRoutes);
 app.use("/api/payment-mode", paymentModeRoutes);
 app.use("/api/merchant", merchantRoutes);
 app.use("/api/category", categoryRoutes);
+app.use("/api/budget-category", budgetCategoryRoutes);
+app.use("/api/budget", budgetRoutes);
+app.use("/api/budget-tax", budgetTaxesRoutes);
+app.use("/api/budget-merchant", budgetMerchantRoutes);
+app.use("/api/budget-units", budgetUnitsRoutes);
 
 
 const PORT = process.env.PORT || 3001;

@@ -2,13 +2,10 @@ const express = require('express');
 const router = express.Router();
 const bannerController = require('../controllers/bannerController');
 const uploadImages = require('../middlewares/uploadImages');
-const { authenticateToken, checkPermission } = require("../middlewares/authMiddleware");
 
 router.get("/", bannerController.getAllBanner);
 router.get("/:id", bannerController.getBannerById);
 
-// router.use(authenticateToken);
-// router.use(checkPermission("banners"));
 
 router.post("/create", uploadImages("uploads/banners", {
     mode: "fields",

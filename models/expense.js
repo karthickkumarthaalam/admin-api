@@ -51,6 +51,14 @@ module.exports = (sequelize, DataTypes) => {
                 key: "id"
             },
             onDelete: "CASCADE"
+        },
+        created_by: {
+            type: DataTypes.INTEGER,
+            references: {
+                model: "Users",
+                key: "id"
+            },
+            onDelete: "CASCADE"
         }
     }, {
         tableName: "expenses",
@@ -69,6 +77,11 @@ module.exports = (sequelize, DataTypes) => {
             foreignKey: "expense_id",
             as: "categories",
             onDelete: "CASCADE"
+        });
+        Expenses.belongsTo(models.SystemUsers, {
+            foreignKey: "created_by",
+            targetKey: "user_id",
+            as: "creator"
         });
     };
 

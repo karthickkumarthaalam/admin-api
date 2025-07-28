@@ -3,6 +3,9 @@ const router = express.Router();
 const expenseController = require("../controllers/expenseController");
 const upload = require("../middlewares/uploadPdf");
 
+const { authenticateToken } = require("../middlewares/authMiddleware");
+
+router.use(authenticateToken);
 
 router.post("/", expenseController.createExpenseWithCategories);
 router.get("/", expenseController.getAllExpenses);

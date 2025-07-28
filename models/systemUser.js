@@ -71,6 +71,10 @@ module.exports = (sequelize, DataTypes) => {
         status: {
             type: DataTypes.ENUM("active", "inactive"),
             defaultValue: "active"
+        },
+        is_admin: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         }
     }, {
         tableName: 'system_users',

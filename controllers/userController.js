@@ -94,8 +94,9 @@ exports.login = async (req, res) => {
 
         const token = jwt.sign(
             {
-                if: user.id,
+                id: user.id,
                 email: user.email,
+                role: user.role,
                 permissions: userPermissions
             },
             process.env.JWT_SECRET,
@@ -114,7 +115,8 @@ exports.login = async (req, res) => {
             user: {
                 id: user.id,
                 email: user.email,
-                permissions: userPermissions
+                permissions: userPermissions,
+                role: user.role
             }
         });
     } catch (error) {

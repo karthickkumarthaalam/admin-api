@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const packageController = require("../controllers/packageController");
-const { authenticateToken, checkPermission } = require("../middlewares/authMiddleware");
 
 
 router.post("/", packageController.createPackage);

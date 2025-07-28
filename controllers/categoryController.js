@@ -10,14 +10,15 @@ exports.createCategory = async (req, res) => {
             return res.status(404).json({ status: "error", message: "Category Name is required" });
         }
 
-        const existingCategory = await Category.findOne({ where: { category_name } });
+        const existingCategory = await Category.findOne({ where: { category_name, created_by: req.user.id } });
 
         if (existingCategory) {
             return res.status(400).json({ status: "error", message: "Category Name already present" });
         }
 
         const category = await Category.create({
-            category_name
+            category_name,
+            created_by: req.user.id
         });
 
         return res.status(201).json({ status: "success", message: "Category created successfully", data: category });
@@ -31,7 +32,17 @@ exports.createCategory = async (req, res) => {
 exports.listCategory = async (req, res) => {
     try {
 
-        const list = await Category.findAll();
+        const { role, id } = req.user;
+
+        const whereCondition = {};
+
+        if (role !== "admin") {
+            whereCondition.created_by = id;
+        }
+
+        const list = await Category.findAll({
+            where: whereCondition
+        });
 
         return res.status(200).json({
             status: "success",

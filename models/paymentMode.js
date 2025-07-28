@@ -8,10 +8,26 @@ module.exports = (sequelize, DataTypes) => {
         name: {
             type: DataTypes.STRING,
             allowNull: false
+        },
+        created_by: {
+            type: DataTypes.INTEGER,
+            references: {
+                model: "Users",
+                key: "id"
+            },
+            onDelete: "CASCADE"
         }
     }, {
         tableName: "payment_mode"
     });
+
+    PaymentMode.associate = (models) => {
+        PaymentMode.belongsTo(models.SystemUsers, {
+            foreignKey: "created_by",
+            targetKey: "user_id",
+            as: "creator"
+        });
+    };
 
     return PaymentMode;
 };

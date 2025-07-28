@@ -10,13 +10,13 @@ exports.createPaidThrough = async (req, res) => {
             return res.status(400).json({ status: "error", message: "Name is required" });
         }
 
-        const existing = await PaidThrough.findOne({ where: { name } });
+        const existing = await PaidThrough.findOne({ where: { name, created_by: req.user.id } });
 
         if (existing) {
             return res.status(400).json({ status: "error", message: "Paid through already exists" });
         }
 
-        const newPaidThrough = await PaidThrough.create({ name });
+        const newPaidThrough = await PaidThrough.create({ name, created_by: req.user.id });
 
         return res.status(201).json({
             status: "success",
@@ -36,7 +36,15 @@ exports.createPaidThrough = async (req, res) => {
 // List PaidThrough
 exports.listPaidThrough = async (req, res) => {
     try {
+        const { role, id } = req.user;
+
+        const whereCondition = {};
+
+        if (role !== "admin") {
+            whereCondition.created_by = id;
+        }
         const list = await PaidThrough.findAll({
+            where: whereCondition,
             attributes: ["id", "name"],
             order: [["createdAt", "DESC"]]
         });

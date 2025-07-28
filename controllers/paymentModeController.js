@@ -11,7 +11,8 @@ exports.createPaymentMode = async (req, res) => {
 
         const existingPaymentMode = await PaymentMode.findOne({
             where: {
-                name: name
+                name: name,
+                created_by: req.user.id
             }
         });
 
@@ -19,7 +20,7 @@ exports.createPaymentMode = async (req, res) => {
             return res.status(400).json({ status: "error", message: "Payment mode already exists" });
         }
 
-        const paymentMode = await PaymentMode.create({ name });
+        const paymentMode = await PaymentMode.create({ name, created_by: req.user.id });
 
         return res.status(201).json({ status: "success", message: "Payment Mode created", data: paymentMode });
 
@@ -31,7 +32,16 @@ exports.createPaymentMode = async (req, res) => {
 
 exports.listPaymentMode = async (req, res) => {
     try {
+        const { role, id } = req.user;
+
+        const whereCondition = {};
+
+        if (role !== admin) {
+            whereCondition.created_by = id;
+        }
+
         const paymentModes = await PaymentMode.findAll({
+            where: whereCondition,
             attributes: ['id', 'name'],
             order: [['createdAt', 'DESC']]
         });

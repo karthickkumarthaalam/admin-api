@@ -13,7 +13,7 @@ exports.createSystemUser = async (req, res) => {
         const {
             name, email, gender, date_of_birth,
             phone_number, whatsapp_number, address,
-            country, state, city, description, department_id, status
+            country, state, city, description, department_id, share_access, is_admin
         } = req.body;
 
         const existingUser = await SystemUsers.findOne({ where: { email } });
@@ -28,6 +28,7 @@ exports.createSystemUser = async (req, res) => {
         const user = await User.create({
             email,
             password: hashedPassword,
+            role: is_admin === true || is_admin === "true" ? "admin" : "user"
         });
 
 
@@ -37,11 +38,12 @@ exports.createSystemUser = async (req, res) => {
 
         const systemUser = await SystemUsers.create({
             name, email, gender, date_of_birth, phone_number, whatsapp_number,
-            address, country, state, city, description, department_id, status, image_url: imageUrl, user_id: user.id
+            address, country, state, city, description, department_id, status: "inactive", image_url: imageUrl, user_id: user.id, is_admin
         });
 
-        await sendRjPasswordEmail(email, name, plainPassword);
-
+        if (share_access === true || share_access === "true") {
+            await sendRjPasswordEmail(email, name, plainPassword);
+        }
         res.status(201).json({ message: "System user created successfully", data: systemUser });
 
     } catch (error) {
@@ -53,34 +55,55 @@ exports.createSystemUser = async (req, res) => {
 exports.updateSystemUser = async (req, res) => {
     try {
         const { id } = req.params;
-        const user = await SystemUsers.findByPk(id);
-        if (!user) return res.status(404).json({ message: "User not found" });
+        const systemUser = await SystemUsers.findByPk(id, { include: "users" });
+        if (!systemUser) return res.status(404).json({ message: "User not found" });
 
-        if (req.body.email && req.body.email !== user.email) {
-            const existingUser = await User.findOne({ where: { email: req.body.email } });
-            if (existingUser) {
+        const userRecord = systemUser.users;
+
+        const {
+            email, name, share_access, is_admin,
+            ...restBody
+        } = req.body;
+
+        // Email change & duplication check
+        if (email && email !== userRecord.email) {
+            const emailTaken = await db.User.findOne({ where: { email } });
+            if (emailTaken) {
                 return res.status(400).json({ message: "Another user with this email already exists" });
             }
-            await User.update(
-                { email: req.body.email },
-                { where: { id: user.user_id } }
-            );
+            userRecord.email = email;
         }
 
-        let imageUrl = user.image_url;
+        // Share access -> send new password
+        if (String(share_access).toLowerCase() === "true") {
+            const plainPassword = crypto.randomBytes(6).toString("hex");
+            const hashedPassword = await bcrypt.hash(plainPassword, 10);
+            userRecord.password = hashedPassword;
+            await sendRjPasswordEmail(userRecord.email, name || systemUser.name, plainPassword);
+        }
+
+        // is_admin -> update role
+        if (is_admin !== undefined) {
+            userRecord.role = (is_admin === true || is_admin === "true") ? "admin" : "user";
+        }
+
+        await userRecord.save(); // single update
+
+        // Image update
+        let imageUrl = systemUser.image_url;
         if (req.files["profile_image"]) {
-            if (user.image_url && fs.existsSync(user.image_url)) {
-                fs.unlinkSync(user.image_url);
+            if (imageUrl && fs.existsSync(imageUrl)) {
+                fs.unlinkSync(imageUrl);
             }
             imageUrl = req.files["profile_image"][0].path;
         }
 
-        await user.update({
-            ...req.body,
-            image_url: imageUrl
+        await systemUser.update({
+            ...restBody,
+            image_url: imageUrl,
         });
 
-        res.status(200).json({ message: "User updated successfully", data: user });
+        res.status(200).json({ message: "User updated successfully", data: systemUser });
     } catch (error) {
         res.status(500).json({ message: "Failed to update user", error: error.message });
     }
