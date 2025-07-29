@@ -20,5 +20,7 @@ router.post("/budget-items", budgetItemsController.createBudgetItems);
 router.get("/budget-items/:budget_id", budgetItemsController.getBudgetItemsByBudgetId);
 router.patch("/budget-items/:budget_id", budgetItemsController.updateBudgetItems);
 
+router.post("/duplicate/:budgetId", budgetController.duplicateBudget);
+
 
 module.exports = router;

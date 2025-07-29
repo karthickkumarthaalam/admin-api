@@ -203,7 +203,7 @@ const sendRjPasswordEmail = async (toEmail, toName, plainPassword) => {
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2>Hi ${toName},</h2>
       <p>Welcome to <strong>Thaalam Media</strong>!</p>
-      <p>Your RJ profile has been successfully created. Here are your login credentials:</p>
+      <p>Your User profile has been successfully created. Here are your login credentials:</p>
       
       <p><strong>Email:</strong> ${toEmail}</p>
       <p><strong>Password:</strong> ${plainPassword}</p>

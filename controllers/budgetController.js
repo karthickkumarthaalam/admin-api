@@ -1,7 +1,7 @@
 const { Op } = require("sequelize");
 const db = require("../models");
 const pagination = require("../utils/pagination");
-const { Budget, Currency, BudgetTaxes, BudgetTaxApplication, SystemUsers } = db;
+const { Budget, Currency, BudgetTaxes, BudgetTaxApplication, SystemUsers, BudgetItem } = db;
 
 exports.getNextBudgetId = async (req, res) => {
     try {
@@ -315,5 +315,88 @@ exports.getBudgetTax = async (req, res) => {
 
     } catch (error) {
         return res.status(500).json({ status: "error", message: "Failed to get budget tax", error: error.message });
+    }
+};
+
+exports.duplicateBudget = async (req, res) => {
+    const { budgetId } = req.params;
+    const userId = req.user.id;
+
+    const t = await db.sequelize.transaction();
+
+    try {
+        const originalBudget = await Budget.findOne({
+            where: { id: budgetId },
+            include: [
+                { model: BudgetItem, as: "items" },
+                { model: BudgetTaxApplication, as: "taxes" }
+            ],
+            transaction: t
+        });
+
+        if (!originalBudget) {
+            await t.rollback();
+            return res.status(404).json({ status: "error", message: "Original budget not found" });
+        }
+
+        const lastBudget = await Budget.findOne({ order: [["createdAt", "DESC"]], transaction: t });
+        const year = new Date().getFullYear();
+        let nextId = 1;
+
+        if (lastBudget?.budget_id) {
+            const match = lastBudget.budget_id.match(/^TMA(\d{4})(\d{3})$/);
+            if (match) {
+                const lastNum = parseInt(match[2], 10);
+                nextId = lastNum + 1;
+            }
+        }
+
+        const padded = String(nextId).padStart(3, "0");
+        const newBudgetId = `TMA${year}${padded}`;
+
+        const duplicatedBudget = await Budget.create({
+            budget_id: newBudgetId,
+            title: originalBudget.title,
+            date: originalBudget.date,
+            from_date: originalBudget.from_date,
+            to_date: originalBudget.to_date,
+            currency_id: originalBudget.currency_id,
+            description: originalBudget.description,
+            created_by: userId,
+        }, { transaction: t });
+
+        const clonedItems = originalBudget.items.map((item) => {
+            const { id, budget_id, createdAt, updatedAt, ...rest } = item.toJSON();
+            return { ...rest, budget_id: duplicatedBudget.id };
+        });
+
+        if (clonedItems.length > 0) {
+            await BudgetItem.bulkCreate(clonedItems, { transaction: t });
+        }
+
+        const clonedTaxes = originalBudget.taxes.map((tax) => {
+            const { id, budget_id, createdAt, updatedAt, ...rest } = tax.toJSON();
+            return { ...rest, budget_id: duplicatedBudget.id };
+        });
+
+        if (clonedTaxes.length > 0) {
+            await BudgetTaxApplication.bulkCreate(clonedTaxes, { transaction: t });
+        }
+
+        await t.commit();
+
+        return res.status(201).json({
+            status: "success",
+            message: "Budget duplicated successfully",
+            data: duplicatedBudget
+        });
+
+    } catch (error) {
+        await t.rollback();
+        return res.status(500).json({
+            status: "error",
+            message: "Failed to duplicate budget",
+            error: error.message
+        });
     }
 };

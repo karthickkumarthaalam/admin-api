@@ -67,6 +67,13 @@ module.exports = (sequelize, DataTypes) => {
             as: "items",
             onDelete: "CASCADE"
         });
+
+        Budget.hasMany(models.BudgetTaxApplication, {
+            foreignKey: "budget_id",
+            as: "taxes",
+            onDelete: "CASCADE"
+        });
+
         Budget.belongsTo(models.Currency, {
             foreignKey: "currency_id",
             as: "currency"
