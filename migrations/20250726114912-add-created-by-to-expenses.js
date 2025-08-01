@@ -45,9 +45,9 @@ module.exports = {
     }
 
     // merchants
-    const merchants = await queryInterface.describeTable("merchants");
+    const merchants = await queryInterface.describeTable("Merchants");
     if (!merchants["created_by"]) {
-      await queryInterface.addColumn("merchants", "created_by", {
+      await queryInterface.addColumn("Merchants", "created_by", {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
@@ -66,7 +66,7 @@ module.exports = {
       "expenses",
       "payment_mode",
       "paid_through",
-      "merchants",
+      "Merchants",
     ];
 
     for (const table of tables) {
