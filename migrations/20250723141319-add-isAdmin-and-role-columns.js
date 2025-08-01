@@ -1,23 +1,39 @@
 'use strict';
 
 module.exports = {
-  up: async (queryInterface, Sequelize) => {
-    await queryInterface.addColumn('system_users', 'is_admin', {
-      type: Sequelize.BOOLEAN,
-      allowNull: false,
-      defaultValue: false
-    });
+  async up(queryInterface, Sequelize) {
+    const systemUsers = await queryInterface.describeTable('system_users');
+    const users = await queryInterface.describeTable('Users');
 
-    await queryInterface.addColumn('Users', 'role', {
-      type: Sequelize.ENUM('admin', 'user'),
-      allowNull: false,
-      defaultValue: 'user'
-    });
+    if (!systemUsers['is_admin']) {
+      await queryInterface.addColumn('system_users', 'is_admin', {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      });
+    }
+
+    if (!users['role']) {
+      await queryInterface.addColumn('Users', 'role', {
+        type: Sequelize.ENUM('admin', 'user'),
+        allowNull: false,
+        defaultValue: 'user',
+      });
+    }
   },
 
-  down: async (queryInterface, Sequelize) => {
-    await queryInterface.removeColumn('system_users', 'is_admin');
-    await queryInterface.removeColumn('Users', 'role');
-    await queryInterface.sequelize.query('DROP TYPE IF EXISTS "enum_Users_role";');
+  async down(queryInterface, Sequelize) {
+    const systemUsers = await queryInterface.describeTable('system_users');
+    const users = await queryInterface.describeTable('Users');
+
+    if (systemUsers['is_admin']) {
+      await queryInterface.removeColumn('system_users', 'is_admin');
+    }
+
+    if (users['role']) {
+      await queryInterface.removeColumn('Users', 'role');
+      // Drop ENUM type manually (MySQL will ignore this if ENUM is dropped automatically)
+      await queryInterface.sequelize.query('DROP TYPE IF EXISTS enum_Users_role;');
+    }
   }
 };
