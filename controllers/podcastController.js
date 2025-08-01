@@ -312,10 +312,10 @@ exports.updatePodcast = async (req, res) => {
         if (audioFile) {
             (async () => {
                 try {
-                    // if (podcast.audio_drive_file_link) {
-                    //     const fileName = podcast.audio_drive_file_link.split("/").pop();
-                    //     await deleteFromCpanel("podcast/audio", fileName);
-                    // }
+                    if (podcast.audio_drive_file_link) {
+                        const fileName = podcast.audio_drive_file_link.split("/").pop();
+                        await deleteFromCpanel("podcast/audio", fileName);
+                    }
 
                     const uploadedUrl = await uploadToCpanel(
                         audioFile.path,

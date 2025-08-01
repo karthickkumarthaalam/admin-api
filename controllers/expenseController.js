@@ -438,11 +438,11 @@ exports.updateCategoryBill = async (req, res) => {
             return res.status(400).json({ status: "error", message: "Bill file is required" });
         }
 
-        // if (category.bill_drive_link) {
-        //     const remoteFolder = "expense/bills";
-        //     const existingFileName = category.bill_drive_link.split("/").pop();
-        //     await deleteFromCpanel(remoteFolder, existingFileName);
-        // }
+        if (category.bill_drive_link) {
+            const remoteFolder = "expense/bills";
+            const existingFileName = category.bill_drive_link.split("/").pop();
+            await deleteFromCpanel(remoteFolder, existingFileName);
+        }
 
         const remoteFolder = "expense/bills";
         const billUrl = await uploadToCpanel(bill.path, remoteFolder, bill.originalname);

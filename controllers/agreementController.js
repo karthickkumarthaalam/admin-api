@@ -68,10 +68,10 @@ exports.uploadPdfFile = async (req, res) => {
             return res.status(400).json({ status: "error", message: "PDF is required" });
         }
 
-        // if (agreement.pdf_drive_link) {
-        //     const filename = agreement.pdf_drive_link.split("/").pop();
-        //     await deleteFromCpanel("agreement/pdf", filename);
-        // }
+        if (agreement.pdf_drive_link) {
+            const filename = agreement.pdf_drive_link.split("/").pop();
+            await deleteFromCpanel("agreement/pdf", filename);
+        }
 
         const uploadedUrl = await uploadToCpanel(
             pdfFile.path,
@@ -110,10 +110,10 @@ exports.uploadSignedPdf = async (req, res) => {
             return res.status(400).json({ status: "error", message: "Signed PDF is required" });
         }
 
-        // if (agreement.signed_pdf_drive_link) {
-        //     const fileName = agreement.signed_pdf_drive_link.split("/").pop();
-        //     await deleteFromCpanel("agreement/signedPdf", fileName);
-        // }
+        if (agreement.signed_pdf_drive_link) {
+            const fileName = agreement.signed_pdf_drive_link.split("/").pop();
+            await deleteFromCpanel("agreement/signedPdf", fileName);
+        }
 
         const uploadedUrl = await uploadToCpanel(
             signedPdf.path,
