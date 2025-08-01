@@ -1,13 +1,11 @@
 const db = require("../models");
-const { google } = require("googleapis");
-const rangeParser = require("range-parser");
-const { Podcast, PodcastComment, Members } = db;
+const { Podcast, PodcastComment, Members, SystemUsers } = db;
 const fs = require("fs");
 const { Op, literal } = require("sequelize");
 const { getAudioDurationInSeconds } = require("get-audio-duration");
-const { uploadAudioFile, deleteAudioFile } = require("../services/googleDriveService");
 const pagination = require("../utils/pagination");
 const formatTime = require("../utils/audioDurationFormater");
+const { uploadToCpanel, deleteFromCpanel } = require("../services/uploadToCpanel");
 
 exports.createPodcast = async (req, res) => {
     const imageFile = req.files["image"] ? req.files["image"][0] : null;
@@ -36,6 +34,7 @@ exports.createPodcast = async (req, res) => {
             image_url: imageFile ? imageFile.path : null,
             audio_drive_file_id: null,
             audio_drive_file_link: null,
+            created_by: req.user.id
         });
 
         res.status(201).json({
@@ -45,16 +44,14 @@ exports.createPodcast = async (req, res) => {
         });
 
         try {
-            const audioBuffer = fs.readFileSync(audioFile.path);
-            const audioUpload = await uploadAudioFile(
-                audioBuffer,
-                audioFile.originalname,
-                process.env.GOOGLE_DRIVE_FOLDER_ID
+            const uploadedUrl = await uploadToCpanel(
+                audioFile.path,
+                "podcasts/audio",
+                audioFile.originalname
             );
 
             await newPodcast.update({
-                audio_drive_file_id: audioUpload.id,
-                audio_drive_file_link: audioUpload.webContentLink
+                audio_drive_file_link: uploadedUrl
             });
 
             fs.unlinkSync(audioFile.path);
@@ -106,6 +103,18 @@ exports.getAllPodcasts = async (req, res) => {
             };
         }
 
+        if (req.isAuthenticated && req.user && req.user.role !== "admin") {
+            const systemUser = await SystemUsers.findOne({
+                where: {
+                    user_id: req.user.id
+                }
+            });
+
+            if (systemUser) {
+                where.rjname = systemUser.name;
+            }
+        }
+
         const result = await pagination(Podcast, {
             page,
             limit,
@@ -114,6 +123,7 @@ exports.getAllPodcasts = async (req, res) => {
         });
 
         const podcastIds = result.data.map(p => p.id);
+
         if (podcastIds.length > 0) {
             const reactionCounts = await db.sequelize.query(`
         SELECT podcast_id, reaction, COUNT(*) as count
@@ -302,24 +312,22 @@ exports.updatePodcast = async (req, res) => {
         if (audioFile) {
             (async () => {
                 try {
-                    if (podcast.audio_drive_file_id) {
-                        await deleteAudioFile(podcast.audio_drive_file_id);
-                    }
+                    // if (podcast.audio_drive_file_link) {
+                    //     const fileName = podcast.audio_drive_file_link.split("/").pop();
+                    //     await deleteFromCpanel("podcast/audio", fileName);
+                    // }
 
-                    const audioBuffer = fs.readFileSync(audioFile.path);
-                    const audioUpload = await uploadAudioFile(
-                        audioBuffer,
-                        audioFile.originalname,
-                        process.env.GOOGLE_DRIVE_FOLDER_ID
+                    const uploadedUrl = await uploadToCpanel(
+                        audioFile.path,
+                        "podcasts/audio",
+                        audioFile.originalname
                     );
-
                     const durationInSeconds = await getAudioDurationInSeconds(audioFile.path);
                     const formattedDuration = formatTime(durationInSeconds);
 
                     await podcast.update({
                         duration: formattedDuration,
-                        audio_drive_file_id: audioUpload.id,
-                        audio_drive_file_link: audioUpload.webContentLink
+                        audio_drive_file_link: uploadedUrl
                     });
 
                     fs.unlinkSync(audioFile.path);
@@ -346,7 +354,7 @@ exports.deletePodcast = async (req, res) => {
             fs.unlinkSync(podcast.image_url);
         }
 
-        const audioDriveId = podcast.audio_drive_file_id;
+        const audioDrivelink = podcast.audio_drive_file_link;
 
         await podcast.destroy();
 
@@ -355,8 +363,9 @@ exports.deletePodcast = async (req, res) => {
             message: "Podcast deleted successfully"
         });
 
-        if (audioDriveId) {
-            await deleteAudioFile(audioDriveId);
+        if (audioDrivelink) {
+            const fileName = audioDrivelink.split("/").pop();
+            await deleteFromCpanel("podcasts/audio", fileName);
         }
 
     } catch (error) {
@@ -365,85 +374,10 @@ exports.deletePodcast = async (req, res) => {
 };
 
 
-exports.streamAudioFromDrive = async (req, res) => {
-    const fileId = req.params.fileId;
+exports.streamAudio = async (req, res) => {
+    const fileName = req.params.fileName;
+    if (!fileName) return res.status(400).send("Filename is required");
 
-    if (!fileId) {
-        return res.status(400).send("File ID is required");
-    }
-
-    const drive = google.drive({
-        version: "v3",
-        auth: new google.auth.GoogleAuth({
-            keyFile: process.env.GOOGLE_SERVICE_ACCOUNT_PATH,
-            scopes: ["https://www.googleapis.com/auth/drive.readonly"],
-        }),
-    });
-
-    try {
-        // Get file metadata to determine total size
-        const metadata = await drive.files.get({
-            fileId,
-            fields: "size, mimeType",
-        });
-
-        const fileSize = Number(metadata.data.size);
-        const mimeType = metadata.data.mimeType;
-        const rangeHeader = req.headers.range;
-
-        let start = 0;
-        let end = fileSize - 1;
-
-        if (rangeHeader) {
-            const ranges = rangeParser(fileSize, rangeHeader);
-            if (ranges === -1) {
-                return res.status(416).send("Requested Range Not Satisfiable");
-            }
-            const { start: rStart, end: rEnd } = ranges[0];
-            start = rStart;
-            end = rEnd;
-        }
-
-        const contentLength = end - start + 1;
-
-        // Set response headers
-        res.writeHead(rangeHeader ? 206 : 200, {
-            "Content-Type": mimeType || "audio/mpeg",
-            "Content-Length": contentLength,
-            "Accept-Ranges": "bytes",
-            "Content-Range": `bytes ${start}-${end}/${fileSize}`,
-        });
-
-        // Stream file with alt=media
-        const driveResponse = await drive.files.get(
-            { fileId, alt: "media" },
-            { responseType: "stream" }
-        );
-
-        let bytesSent = 0;
-
-        driveResponse.data
-            .on("data", (chunk) => {
-                const chunkStart = bytesSent;
-                const chunkEnd = bytesSent + chunk.length - 1;
-
-                if (chunkEnd >= start && chunkStart <= end) {
-                    const sliceStart = Math.max(start - chunkStart, 0);
-                    const sliceEnd = Math.min(chunk.length, end - chunkStart + 1);
-                    res.write(chunk.slice(sliceStart, sliceEnd));
-                }
-
-                bytesSent += chunk.length;
-                if (bytesSent > end) {
-                    res.end();
-                    driveResponse.data.destroy();
-                }
-            })
-            .on("end", () => res.end())
-            .on("error", (err) => {
-                res.status(500).send("Failed to stream audio file.");
-            });
-    } catch (error) {
-        res.status(500).send("Failed to stream audio file.");
-    }
+    const audioUrl = `https://thaalam.ch/podcast/audio/${fileName}`;
+    return res.redirect(audioUrl);
 };

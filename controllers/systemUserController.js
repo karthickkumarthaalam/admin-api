@@ -67,7 +67,7 @@ exports.updateSystemUser = async (req, res) => {
 
         // Email change & duplication check
         if (email && email !== userRecord.email) {
-            const emailTaken = await db.User.findOne({ where: { email } });
+            const emailTaken = await User.findOne({ where: { email } });
             if (emailTaken) {
                 return res.status(400).json({ message: "Another user with this email already exists" });
             }
@@ -100,6 +100,8 @@ exports.updateSystemUser = async (req, res) => {
 
         await systemUser.update({
             ...restBody,
+            name: name,
+            email: email,
             image_url: imageUrl,
         });
 

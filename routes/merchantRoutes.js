@@ -7,5 +7,7 @@ router.use(authenticateToken);
 
 router.post("/", merchantController.createMerchant);
 router.get("/", merchantController.listMerchantName);
+router.put("/:id", merchantController.updateMerchant);
+router.delete("/:id", merchantController.deleteMerchant);
 
 module.exports = router;

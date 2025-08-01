@@ -81,6 +81,14 @@ module.exports = (sequelize, DataTypes) => {
                     this.setDataValue('tags', JSON.stringify([]));
                 }
             }
+        },
+        created_by: {
+            type: DataTypes.INTEGER,
+            references: {
+                model: "Users",
+                key: "id"
+            },
+            onDelete: "CASCADE"
         }
     }, {
         tableName: 'podcasts',
@@ -90,6 +98,11 @@ module.exports = (sequelize, DataTypes) => {
     Podcast.associate = (models) => {
         Podcast.hasMany(models.PodcastComment, { foreignKey: "podcast_id" });
         Podcast.hasMany(models.PodcastReaction, { foreignKey: "podcast_id" });
+        Podcast.belongsTo(models.SystemUsers, {
+            foreignKey: "created_by",
+            targetKey: "user_id",
+            as: "creator"
+        });
     };
 
     return Podcast;

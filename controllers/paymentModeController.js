@@ -36,7 +36,7 @@ exports.listPaymentMode = async (req, res) => {
 
         const whereCondition = {};
 
-        if (role !== admin) {
+        if (role !== "admin") {
             whereCondition.created_by = id;
         }
 

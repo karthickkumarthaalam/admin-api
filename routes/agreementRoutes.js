@@ -2,6 +2,9 @@ const express = require("express");
 const router = express.Router();
 const agreementController = require("../controllers/agreementController");
 const upload = require("../middlewares/uploadPdf");
+const { authenticateToken } = require("../middlewares/authMiddleware");
+
+router.use(authenticateToken);
 
 router.post(
     "/create",

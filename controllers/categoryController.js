@@ -1,5 +1,5 @@
 const db = require("../models");
-const { Category } = db;
+const { Category, SystemUsers } = db;
 
 
 exports.createCategory = async (req, res) => {
@@ -41,7 +41,14 @@ exports.listCategory = async (req, res) => {
         }
 
         const list = await Category.findAll({
-            where: whereCondition
+            where: whereCondition,
+            include: [
+                {
+                    model: SystemUsers,
+                    as: "creator",
+                    attributes: ["name"]
+                }
+            ]
         });
 
         return res.status(200).json({
@@ -53,6 +60,57 @@ exports.listCategory = async (req, res) => {
         return res.status(500).json({
             status: "error",
             message: "Failed to fetch Category Name",
+            error: error.message
+        });
+    }
+};
+
+exports.updateCategory = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const { category_name } = req.body;
+        const category = await Category.findByPk(id);
+
+        if (!category) {
+            return res.status(404).json({ status: "error", message: "Category not found" });
+        }
+
+        const existingCategory = await Category.findOne({ where: { category_name, created_by: req.user.id } });
+
+        if (existingCategory) {
+            return res.status(400).json({ status: "error", message: "Category Name already present" });
+        }
+
+        category.category_name = category_name;
+        await category.save();
+
+        return res.status(200).json({ status: "success", message: "category updated successfully" });
+    } catch (error) {
+        return res.status(500).json({
+            status: "error",
+            message: "Failed to update Category",
+            error: error.message
+        });
+    }
+};
+
+
+exports.deleteCategory = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const category = await Category.findByPk(id);
+
+        if (!category) {
+            return res.status(404).json({ status: "error", message: "Category not found" });
+        }
+
+        await category.destroy();
+        return res.status(200).json({ status: "success", message: "category deleted successfully" });
+
+    } catch (error) {
+        return res.status(500).json({
+            status: "error",
+            message: "Failed to delete Category",
             error: error.message
         });
     }

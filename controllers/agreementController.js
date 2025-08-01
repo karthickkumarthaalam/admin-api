@@ -1,9 +1,9 @@
 const db = require("../models");
 const fs = require("fs");
-const { uploadPdfFile, deletePdfFile } = require("../services/googleDriveService");
 const { Op } = require("sequelize");
 const pagination = require("../utils/pagination");
-const { Agreement } = db;
+const { deleteFromCpanel, uploadToCpanel } = require("../services/uploadToCpanel");
+const { Agreement, SystemUsers } = db;
 
 exports.createAgreement = async (req, res) => {
 
@@ -19,6 +19,7 @@ exports.createAgreement = async (req, res) => {
             title,
             date,
             category,
+            created_by: req.user.id
         });
 
         res.status(201).json({ status: "success", message: "Agreement created", data: agreement });
@@ -54,10 +55,10 @@ exports.updateAgreement = async (req, res) => {
 };
 
 exports.uploadPdfFile = async (req, res) => {
-    const pdfFile = req.files["pdf"] ? req.files["pdf"][0] : null;
-
+    const pdfFile = req.files?.["pdf"]?.[0];
+    const { id } = req.params;
     try {
-        const agreement = await Agreement.findByPk(req.params.id);
+        const agreement = await Agreement.findByPk(id);
 
         if (!agreement) {
             return res.status(404).json({ status: "error", message: "Agreement not found" });
@@ -67,44 +68,40 @@ exports.uploadPdfFile = async (req, res) => {
             return res.status(400).json({ status: "error", message: "PDF is required" });
         }
 
-        if (agreement.pdf_drive_file_id) {
-            await deletePdfFile(agreement.pdf_drive_file_id);
-        }
+        // if (agreement.pdf_drive_link) {
+        //     const filename = agreement.pdf_drive_link.split("/").pop();
+        //     await deleteFromCpanel("agreement/pdf", filename);
+        // }
 
-        const pdfBuffer = fs.readFileSync(pdfFile.path);
-
-        const pdfUpload = await uploadPdfFile(
-            pdfBuffer,
-            pdfFile.originalname,
-            process.env.GOOGLE_DRIVE_AGREEMENT_FOLDER_ID
+        const uploadedUrl = await uploadToCpanel(
+            pdfFile.path,
+            "agreement/pdf",
+            pdfFile.originalname
         );
 
         await agreement.update({
-            pdf_drive_file_id: pdfUpload.id,
-            pdf_drive_link: pdfUpload.webViewLink
+            pdf_drive_link: uploadedUrl
         });
 
         fs.unlinkSync(pdfFile.path);
 
         res.status(200).json({
             status: "success",
-            message: "PDF uploaded successfully",
-            data: agreement,
+            message: "PDF Uploaded Successfully",
+            data: agreement
         });
-
-
     } catch (error) {
         if (pdfFile && fs.existsSync(pdfFile.path)) fs.unlinkSync(pdfFile.path);
-        console.error(error);
-        res.status(500).json({ status: "error", message: "Failed to upload Pdf File" });
+        return res.status(500).json({ status: "error", message: "Failed to upload PDF", error: error.message });
     }
 };
 
 exports.uploadSignedPdf = async (req, res) => {
-    const signedPdf = req.files["signed_pdf"] ? req.files["signed_pdf"][0] : null;
-
+    const signedPdf = req.files?.["signed_pdf"]?.[0];
+    const { id } = req.params;
     try {
-        const agreement = await Agreement.findByPk(req.params.id);
+        const agreement = await Agreement.findByPk(id);
+
         if (!agreement) {
             return res.status(404).json({ status: "error", message: "Agreement not found" });
         }
@@ -113,34 +110,32 @@ exports.uploadSignedPdf = async (req, res) => {
             return res.status(400).json({ status: "error", message: "Signed PDF is required" });
         }
 
-        if (agreement.signed_pdf_drive_file_id) {
-            await deletePdfFile(agreement.signed_pdf_drive_file_id);
-        }
+        // if (agreement.signed_pdf_drive_link) {
+        //     const fileName = agreement.signed_pdf_drive_link.split("/").pop();
+        //     await deleteFromCpanel("agreement/signedPdf", fileName);
+        // }
 
-        const pdfBuffer = fs.readFileSync(signedPdf.path);
-        const pdfUpload = await uploadPdfFile(
-            pdfBuffer,
-            signedPdf.originalname,
-            process.env.GOOGLE_DRIVE_SIGNED_FOLDER_ID
+        const uploadedUrl = await uploadToCpanel(
+            signedPdf.path,
+            "agreement/signedPdf",
+            signedPdf.originalname
         );
 
         await agreement.update({
-            signed_pdf_drive_file_id: pdfUpload.id,
-            signed_pdf_drive_link: pdfUpload.webViewLink,
+            signed_pdf_drive_link: uploadedUrl
         });
 
         fs.unlinkSync(signedPdf.path);
 
         res.status(200).json({
             status: "success",
-            message: "Signed PDF uploaded successfully",
-            data: agreement,
+            message: "PDF Uploaded Successfully",
+            data: agreement
         });
 
     } catch (error) {
         if (signedPdf && fs.existsSync(signedPdf.path)) fs.unlinkSync(signedPdf.path);
-        console.error(error);
-        res.status(500).json({ status: "error", message: "Failed to upload signed PDF" });
+        return res.status(500).json({ status: "error", message: "Failed to upload Signed PDF", error: error.message });
     }
 };
 
@@ -151,12 +146,14 @@ exports.deleteAgreement = async (req, res) => {
             return res.status(404).json({ status: "error", message: "Agreement not found" });
         }
 
-        if (agreement.pdf_drive_file_id) {
-            await deletePdfFile(agreement.pdf_drive_file_id);
+        if (agreement.pdf_drive_link) {
+            const filename = agreement.pdf_drive_link.split("/").pop();
+            await deleteFromCpanel("agreement/pdf", filename);
         }
 
-        if (agreement.signed_pdf_drive_file_id) {
-            await deletePdfFile(agreement.signed_pdf_drive_file_id);
+        if (agreement.signed_pdf_drive_link) {
+            const filename = agreement.signed_pdf_drive_link.split("/").pop();
+            await deleteFromCpanel("agreement/signedPdf", filename);
         }
 
         await agreement.destroy();
@@ -174,7 +171,13 @@ exports.getAllAgreements = async (req, res) => {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 20;
 
+        const { role, id } = req.user;
+
         let whereCondition = {};
+
+        if (role !== "admin") {
+            whereCondition.created_by = id;
+        }
 
         if (req.query.search) {
             const searchQuery = `%${req.query.search}%`;
@@ -188,7 +191,14 @@ exports.getAllAgreements = async (req, res) => {
         const result = await pagination(Agreement, {
             page,
             limit,
-            where: whereCondition
+            where: whereCondition,
+            include: [
+                {
+                    model: SystemUsers,
+                    as: "creator",
+                    attributes: ["name", "email"]
+                }
+            ]
         });
 
         res.status(200).json({ status: "success", data: result.data, padination: result.pagination });
@@ -245,21 +255,24 @@ exports.deleteAgreementPdf = async (req, res) => {
         const agreement = await Agreement.findByPk(id);
         if (!agreement) return res.status(404).json({ message: "Agreement not found" });
 
-        let driveFileId;
+        let fileUrl;
+        let folder;
         if (type === "pdf") {
-            driveFileId = agreement.pdf_drive_file_id;
+            fileUrl = agreement.pdf_drive_link;
+            folder = "agreement/pdf";
         } else if (type === "signed_pdf") {
-            driveFileId = agreement.signed_pdf_drive_file_id;
+            fileUrl = agreement.signed_pdf_drive_link;
+            folder = "agreement/signedPdf";
         } else {
             return res.status(400).json({ message: "Invalid type specified" });
         }
 
-        if (!driveFileId) return res.status(404).json({ message: "No file to delete" });
+        if (!fileUrl) return res.status(404).json({ message: "No file to delete" });
 
-        await deletePdfFile(driveFileId);
+        const filename = fileUrl.split("/").pop();
+        await deleteFromCpanel(folder, filename);
 
         await agreement.update({
-            [`${type}_drive_file_id`]: null,
             [`${type}_drive_link`]: null,
         });
 

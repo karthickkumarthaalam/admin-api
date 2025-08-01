@@ -106,7 +106,7 @@ exports.login = async (req, res) => {
         res.cookie("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            sameSite: "None",
+            sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
             maxAge: 24 * 60 * 60 * 1000
         });
 
@@ -116,7 +116,8 @@ exports.login = async (req, res) => {
                 id: user.id,
                 email: user.email,
                 permissions: userPermissions,
-                role: user.role
+                role: user.role,
+                name: systemUser?.name || "Admin",
             }
         });
     } catch (error) {

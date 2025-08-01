@@ -33,8 +33,24 @@ module.exports = (sequelize, DataTypes) => {
         },
         signed_pdf_drive_link: {
             type: DataTypes.STRING
+        },
+        created_by: {
+            type: DataTypes.INTEGER,
+            references: {
+                model: "Users",
+                key: "id"
+            },
+            onDelete: "CASCADE"
         }
     });
+
+    Agreement.associate = (models) => {
+        Agreement.belongsTo(models.SystemUsers, {
+            foreignKey: "created_by",
+            targetKey: "user_id",
+            as: "creator"
+        });
+    };
 
     return Agreement;
 };

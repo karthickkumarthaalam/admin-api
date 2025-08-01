@@ -4,11 +4,12 @@ const podcastController = require("../controllers/podcastController");
 const podcastUpload = require("../middlewares/uploadPodcastFiles");
 const podcastCommentController = require("../controllers/podcastCommentController");
 const podcastReactionController = require("../controllers/podcastReactionController");
+const { authenticateToken } = require("../middlewares/authMiddleware");
 
 
 //comment
 router.post("/comments", podcastCommentController.addComment);
-router.get("/comments", podcastCommentController.commentList);
+router.get("/comments", authenticateToken, podcastCommentController.commentList);
 router.patch("/comments/:comment_id/status", podcastCommentController.updateCommentStatus);
 router.get("/:id/comments", podcastCommentController.getCommentByPodcast);
 router.delete("/:comment_id/comments", podcastCommentController.deleteComment);
@@ -18,11 +19,18 @@ router.post("/reaction", podcastReactionController.addorupdateReaction);
 router.get("/:podcastId/reactions", podcastReactionController.getReactionCountsByPodcastId);
 router.get("/reaction-stats", podcastController.getPodcastReactions);
 
+router.get("/admin", authenticateToken, (req, res, next) => {
+    req.isAuthenticated = true,
+        next();
+}, podcastController.getAllPodcasts);
 
 // Public
 router.get("/", podcastController.getAllPodcasts);
 router.get("/:id", podcastController.getPodcastById);
-router.get("/stream-audio/:fileId", podcastController.streamAudioFromDrive);
+router.get("/stream-audio/:fileName", podcastController.streamAudio);
+
+router.use(authenticateToken);
+
 
 router.post(
     "/create",

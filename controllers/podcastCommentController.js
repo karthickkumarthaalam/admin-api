@@ -1,6 +1,6 @@
 const db = require("../models");
 const pagination = require("../utils/pagination");
-const { PodcastComment, Podcast, Members } = db;
+const { PodcastComment, Podcast, Members, SystemUsers } = db;
 
 exports.addComment = async (req, res) => {
     try {
@@ -37,8 +37,17 @@ exports.commentList = async (req, res) => {
     try {
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 50;
+        const { role, id } = req.user;
 
         let where = {};
+
+        if (role !== "admin") {
+            const systemUser = await SystemUsers.findOne({
+                where: { user_id: id }
+            });
+
+            where["$Podcast.rjname$"] = systemUser.name;
+        }
 
         if (req.query.status) {
             where.status = req.query.status;
@@ -50,7 +59,7 @@ exports.commentList = async (req, res) => {
             where,
             include: [
                 { model: Members, attributes: ['id', 'name'] },
-                { model: Podcast, attributes: ['id', 'title'] }
+                { model: Podcast, attributes: ['id', 'title', "rjname"] }
             ],
             order: [["created_at", "DESC"]]
         });

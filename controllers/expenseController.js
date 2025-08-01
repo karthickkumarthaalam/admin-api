@@ -3,7 +3,7 @@ const db = require("../models");
 const { Op, fn, col, where } = require("sequelize");
 const { Expenses, ExpenseCategory, PaidThrough, PaymentMode, Currency, SystemUsers } = db;
 const pagination = require("../utils/pagination");
-const { deletePdfFile, uploadPdfFile } = require("../services/googleDriveService");
+const { uploadToCpanel, deleteFromCpanel } = require("../services/uploadToCpanel");
 
 exports.getNextDocumentNumber = async (req, res) => {
     try {
@@ -144,8 +144,9 @@ exports.getAllExpenses = async (req, res) => {
                 { document_id: { [Op.like]: `%${search}%` } },
             ];
         }
-
-        if (month && year) {
+        if (req.query.date) {
+            whereCondition.date = req.query.date;
+        } else if (month && year) {
             whereCondition[Op.and] = [
                 where(fn("MONTH", col("date")), month),
                 where(fn("YEAR", col("date")), year),
@@ -370,7 +371,9 @@ exports.deleteExpense = async (req, res) => {
             categories.map(async (category) => {
                 if (category.bill_drive_file_id) {
                     try {
-                        await deletePdfFile(category.bill_drive_file_id);
+                        const remoteFolder = "expense/bills";
+                        const fileName = category.bill_drive_link.split("/").pop();
+                        await deleteFromCpanel(remoteFolder, fileName);
                     } catch (err) {
                         console.error(`Failed to delete Drive file for category ${category.id}: ${err.message}`);
                     }
@@ -424,39 +427,45 @@ exports.updateExpenseCategoryStatus = async (req, res) => {
 exports.updateCategoryBill = async (req, res) => {
     const { id } = req.params;
     const bill = req.files["bill"] ? req.files["bill"][0] : null;
+
     try {
         const category = await ExpenseCategory.findByPk(id);
         if (!category) {
-            return res.status(404).json({ status: "error", message: "category not found" });
+            return res.status(404).json({ status: "error", message: "Category not found" });
         }
 
         if (!bill) {
-            return res.status(404).json({ status: "error", message: "Bill not found" });
+            return res.status(400).json({ status: "error", message: "Bill file is required" });
         }
 
-        if (category.bill_drive_file_id) {
-            await deletePdfFile(category.bill_drive_file_id);
-        }
+        // if (category.bill_drive_link) {
+        //     const remoteFolder = "expense/bills";
+        //     const existingFileName = category.bill_drive_link.split("/").pop();
+        //     await deleteFromCpanel(remoteFolder, existingFileName);
+        // }
 
-        const billBuffer = fs.readFileSync(bill.path);
-        const billUpload = await uploadPdfFile(
-            billBuffer,
-            bill.originalname,
-            process.env.GOOGLE_DRIVE_EXPENSE_FOLDER_ID
-        );
+        const remoteFolder = "expense/bills";
+        const billUrl = await uploadToCpanel(bill.path, remoteFolder, bill.originalname);
 
         await category.update({
-            bill_drive_file_id: billUpload.id,
-            bill_drive_link: billUpload.webViewLink
+            bill_drive_link: billUrl
         });
 
         fs.unlinkSync(bill.path);
 
-        return res.status(200).json({ status: "success", message: "Bill updated successfully" });
+        return res.status(200).json({
+            status: "success",
+            message: "Bill uploaded successfully",
+            data: category
+        });
 
     } catch (error) {
         if (bill && fs.existsSync(bill.path)) fs.unlinkSync(bill.path);
-        return res.status(500).json({ status: "error", message: "Failed to Add Category Bill", error: error.message });
+        return res.status(500).json({
+            status: "error",
+            message: "Failed to upload bill",
+            error: error.message
+        });
     }
 };
 
@@ -465,17 +474,30 @@ exports.deleteBill = async (req, res) => {
     try {
         const { id } = req.params;
         const category = await ExpenseCategory.findByPk(id);
-        if (!category) return res.status(404).json({ status: "error", message: "category not found" });
+        if (!category) {
+            return res.status(404).json({ status: "error", message: "Category not found" });
+        }
 
-        await deletePdfFile(category.bill_drive_file_id);
+        if (category.bill_drive_link) {
+            const remoteFolder = "expense/bills";
+            const fileName = category.bill_drive_link.split("/").pop();
+            await deleteFromCpanel(remoteFolder, fileName);
+        }
 
         await category.update({
-            bill_drive_file_id: null,
             bill_drive_link: null
         });
-        return res.json({ status: "success", message: "File deleted successfully" });
+
+        return res.status(200).json({
+            status: "success",
+            message: "Bill deleted successfully"
+        });
 
     } catch (error) {
-        res.status(500).json({ status: "error", message: "Failed to delete bill", error: error.message });
+        res.status(500).json({
+            status: "error",
+            message: "Failed to delete bill",
+            error: error.message
+        });
     }
 };
