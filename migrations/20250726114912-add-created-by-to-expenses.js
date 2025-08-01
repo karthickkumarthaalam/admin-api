@@ -58,19 +58,6 @@ module.exports = {
       });
     }
 
-    // categories
-    const categories = await queryInterface.describeTable("categories");
-    if (!categories["created_by"]) {
-      await queryInterface.addColumn("categories", "created_by", {
-        type: Sequelize.INTEGER,
-        allowNull: true,
-        references: {
-          model: "Users",
-          key: "id",
-        },
-        onDelete: "CASCADE",
-      });
-    }
   },
 
   async down(queryInterface) {
@@ -80,7 +67,6 @@ module.exports = {
       "payment_mode",
       "paid_through",
       "merchants",
-      "categories",
     ];
 
     for (const table of tables) {
