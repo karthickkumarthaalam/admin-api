@@ -51,7 +51,8 @@ exports.createExpenseWithCategories = async (req, res) => {
             vendor_type = "vendor",
             payment_mode,
             paid_through,
-            completed_date
+            completed_date,
+            pending_amount
         } = req.body;
 
         if (!merchant || !date || !Array.isArray(expenseCategories) || expenseCategories.length === 0) {
@@ -77,7 +78,7 @@ exports.createExpenseWithCategories = async (req, res) => {
             vendor_type,
             status,
             completed_date,
-            pending_amount: status === "pending" ? total_amount : 0,
+            pending_amount,
             created_by: req.user.id
         };
 
@@ -105,6 +106,8 @@ exports.createExpenseWithCategories = async (req, res) => {
                 category_name: category.category_name,
                 description: category.description || null,
                 amount: category.amount,
+                actual_amount: category?.actual_amount || 0,
+                paid_date: category?.paid_date || null,
                 currency_id: currency.id,
                 status: "pending"
             });
@@ -268,7 +271,8 @@ exports.updateExpenseWithCategories = async (req, res) => {
             vendor_type,
             payment_mode,
             paid_through,
-            completed_date
+            completed_date,
+            pending_amount
         } = req.body;
 
         const { id } = req.params;
@@ -311,7 +315,7 @@ exports.updateExpenseWithCategories = async (req, res) => {
             completed_date,
             payment_mode: paymentModeId,
             paid_through: paidThroughId,
-            pending_amount: status === "pending" ? total_amount : 0
+            pending_amount,
         }, { transaction: t });
 
         await ExpenseCategory.destroy({ where: { expense_id: id }, transaction: t });
@@ -327,6 +331,8 @@ exports.updateExpenseWithCategories = async (req, res) => {
                 category_name: category.category_name,
                 description: category.description || null,
                 amount: category.amount,
+                actual_amount: category?.actual_amount || 0,
+                paid_date: category?.paid_date || null,
                 currency_id: currency.id,
                 status: "pending"
             });

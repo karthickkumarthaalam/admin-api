@@ -25,6 +25,14 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.FLOAT,
             allowNull: false
         },
+        actual_amount: {
+            type: DataTypes.FLOAT,
+            allowNull: true,
+        },
+        paid_date: {
+            type: DataTypes.DATEONLY,
+            allowNull: true
+        },
         currency_id: {
             type: DataTypes.INTEGER,
             allowNull: false,
