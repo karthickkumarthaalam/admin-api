@@ -18,4 +18,6 @@ router.patch("/category/:id/status", expenseController.updateExpenseCategoryStat
 router.post("/category/:id/add-bill", upload.fields([{ name: "bill", maxCount: 1 }]), expenseController.updateCategoryBill);
 router.delete("/category/:id/delete-bill", expenseController.deleteBill);
 
+router.patch("/:id/restore", expenseController.restoreExpense);
+
 module.exports = router;

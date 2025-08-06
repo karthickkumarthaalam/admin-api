@@ -59,7 +59,15 @@ module.exports = (sequelize, DataTypes) => {
                 key: "id"
             },
             onDelete: "CASCADE"
-        }
+        },
+        is_deleted: {
+            type: DataTypes.BOOLEAN,
+            allowNull: true,
+        },
+        deleted_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
+        },
     }, {
         tableName: "expenses",
     });

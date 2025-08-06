@@ -131,6 +131,7 @@ exports.getAllExpenses = async (req, res) => {
         const search = req.query.search || "";
         const month = req.query.month;
         const year = req.query.year;
+        const showDeleted = req.query.show_deleted === "true";
 
         const { role, id } = req.user;
 
@@ -140,6 +141,8 @@ exports.getAllExpenses = async (req, res) => {
             whereCondition.created_by = id;
         }
 
+        whereCondition.is_deleted = showDeleted;
+
         // Search condition
         if (search) {
             whereCondition[Op.or] = [
@@ -147,13 +150,16 @@ exports.getAllExpenses = async (req, res) => {
                 { document_id: { [Op.like]: `%${search}%` } },
             ];
         }
-        if (req.query.date) {
-            whereCondition.date = req.query.date;
-        } else if (month && year) {
-            whereCondition[Op.and] = [
-                where(fn("MONTH", col("date")), month),
-                where(fn("YEAR", col("date")), year),
-            ];
+
+        if (!showDeleted) {
+            if (req.query.date) {
+                whereCondition.date = req.query.date;
+            } else if (month && year) {
+                whereCondition[Op.and] = [
+                    where(fn("MONTH", col("date")), month),
+                    where(fn("YEAR", col("date")), year),
+                ];
+            }
         }
 
         const result = await pagination(Expenses, {
@@ -368,31 +374,13 @@ exports.deleteExpense = async (req, res) => {
             return res.status(404).json({ status: "error", message: "Expense not found" });
         }
 
-        const categories = await ExpenseCategory.findAll({
-            where: { expense_id: id },
-            transaction,
-        });
-
-        await Promise.all(
-            categories.map(async (category) => {
-                if (category.bill_drive_file_id) {
-                    try {
-                        const remoteFolder = "expense/bills";
-                        const fileName = category.bill_drive_link.split("/").pop();
-                        await deleteFromCpanel(remoteFolder, fileName);
-                    } catch (err) {
-                        console.error(`Failed to delete Drive file for category ${category.id}: ${err.message}`);
-                    }
-                }
-            })
-        );
-
-        await ExpenseCategory.destroy({ where: { expense_id: id }, transaction });
-        await expense.destroy({ transaction });
+        expense.is_deleted = true;
+        expense.deleted_at = new Date();
+        await expense.save({ transaction });
 
         await transaction.commit();
+        return res.status(200).json({ message: "Expense soft-deleted successfully" });
 
-        return res.status(200).json({ message: "Expense deleted successfully" });
     } catch (error) {
         await transaction.rollback();
         return res.status(500).json({
@@ -505,5 +493,27 @@ exports.deleteBill = async (req, res) => {
             message: "Failed to delete bill",
             error: error.message
         });
+    }
+};
+
+
+exports.restoreExpense = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const expense = await Expenses.findByPk(id);
+
+        if (!expense || !expense.is_deleted) {
+            return res.status(404).json({ status: "error", message: "Expense not found" });
+        }
+
+        expense.is_deleted = false;
+        expense.deleted_at = null;
+
+        await expense.save();
+
+        return res.status(200).json({ status: "success", message: "Expense Restored Successfully", expense });
+
+    } catch (error) {
+        return res.status(500).json({ status: "error", message: "Failed to restore Expenses", error: error.message });
     }
 };

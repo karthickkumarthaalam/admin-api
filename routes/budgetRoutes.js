@@ -13,6 +13,8 @@ router.get("/:id", budgetController.getBudgetById);
 router.patch("/:id", budgetController.updateBudget);
 router.delete("/:id", budgetController.deleteBudget);
 
+router.patch("/:id/restore", authenticateToken, budgetController.restoreBudget);
+
 router.post("/apply-tax", budgetController.applyBudgetTax);
 router.get("/budget-tax/:budget_id", budgetController.getBudgetTax);
 

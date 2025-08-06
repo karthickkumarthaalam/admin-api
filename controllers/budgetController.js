@@ -127,6 +127,12 @@ exports.getAllBudgets = async (req, res) => {
             whereCondition.created_by = id;
         }
 
+        if (req.query.show_deleted === "true") {
+            whereCondition.is_deleted = true;
+        } else {
+            whereCondition.is_deleted = false;
+        }
+
         if (req.query.search) {
             const searchQuery = req.query.search.trim();
             whereCondition[Op.or] = [
@@ -235,15 +241,9 @@ exports.deleteBudget = async (req, res) => {
             return res.status(404).json({ status: "error", message: "budget not found" });
         }
 
-        await BudgetTaxApplication.destroy({
-            where: {
-                budget_id: budget.id
-            }
-        });
-
-        await budget.destroy();
-
-
+        budget.is_deleted = true;
+        budget.deleted_at = new Date();
+        await budget.save();
 
         return res.status(200).json({ status: "success", message: "Budget deleted successfully" });
 
@@ -398,5 +398,25 @@ exports.duplicateBudget = async (req, res) => {
             message: "Failed to duplicate budget",
             error: error.message
         });
+    }
+};
+
+exports.restoreBudget = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const budget = await Budget.findByPk(id);
+
+        if (!budget || !budget.is_deleted) {
+            return res.status(404).json({ status: "error", message: "budget not found" });
+        }
+
+        budget.is_deleted = false;
+        budget.deleted_at = null;
+
+        await budget.save();
+
+        return res.status(200).json({ status: "success", message: "Budget restored successfully", budget });
+    } catch (error) {
+        return res.status(500).json({ status: "error", message: "Failed to restore budget", error: error.message });
     }
 };
