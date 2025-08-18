@@ -4,6 +4,8 @@ const systemUsersController = require("../controllers/systemUserController");
 const uploadImages = require("../middlewares/uploadImages");
 
 
+router.get("/all-profile", systemUsersController.getSystemUsersWithPrograms);
+router.get("/:id/rj-details", systemUsersController.getRjUserProfile);
 router.post("/create", uploadImages("uploads/systemUsers", {
     mode: "fields",
     fieldsConfig: [{ name: "profile_image", maxCount: 1 }]

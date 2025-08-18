@@ -5,61 +5,94 @@ exports.addorupdateReaction = async (req, res) => {
     try {
         const { podcast_id, member_id, guest_id, reaction } = req.body;
 
-        if (!podcast_id) {
-            return res.status(400).json({ status: "error", message: "Podcast required" });
-        }
-
-        let member;
-
-        if (member_id) {
-            member = await db.Members.findOne({
-                where: {
-                    member_id
-                }
+        if (!podcast_id || !reaction) {
+            return res.status(400).json({
+                status: "error",
+                message: "Podcast ID and reaction type are required"
             });
         }
 
-        const whereCondition = { podcast_id };
+        if (reaction !== 'like') {
+            return res.status(400).json({
+                status: "error",
+                message: "Only 'like' reactions are allowed"
+            });
+        }
+
+        const podcast = await db.Podcast.findByPk(podcast_id);
+        if (!podcast) {
+            return res.status(404).json({
+                status: "error",
+                message: "Podcast not found"
+            });
+        }
+
+        let member;
+        if (member_id) {
+            member = await db.Members.findOne({
+                where: { member_id }
+            });
+            if (!member) {
+                return res.status(404).json({
+                    status: "error",
+                    message: "Member not found"
+                });
+            }
+        }
+
+        const whereCondition = { podcast_id, reaction: 'like' };
 
         if (member_id) {
             whereCondition.member_id = member.id;
         } else if (guest_id) {
             whereCondition.guest_id = guest_id;
+        } else {
+            return res.status(400).json({
+                status: "error",
+                message: "Either member_id or guest_id is required"
+            });
         }
 
+        // Check if user already liked this podcast
         const existingReaction = await PodcastReaction.findOne({
             where: whereCondition
         });
 
         if (existingReaction) {
-            if (existingReaction.reaction == reaction) {
-                await existingReaction.destroy();
-                return res.status(200).json({ status: "success", message: "Reaction removed successfully" });
-            } else {
-                existingReaction.reaction = reaction;
-                await existingReaction.save();
-                return res.status(200).json({ status: "success", message: "Reaction updated successfully" });
-            }
+            return res.status(400).json({
+                status: "error",
+                message: "You have already liked this podcast",
+                already_liked: true
+            });
         }
 
+        // Create new reaction
         await PodcastReaction.create({
             podcast_id,
-            member_id: member.id || null,
+            member_id: member?.id || null,
             guest_id: guest_id || null,
             reaction
         });
 
-        res.status(200).json({ status: "success", message: "Reaction added successfully" });
+        // Get updated reaction count
+        const likeCount = await PodcastReaction.count({
+            where: { podcast_id, reaction: 'like' }
+        });
+
+        res.status(200).json({
+            status: "success",
+            message: "Reaction added successfully",
+            like_count: likeCount
+        });
 
     } catch (error) {
         res.status(500).json({
             status: "error",
-            message: "Failed to add or update reaction",
+            message: "Failed to add reaction",
             error: error.message
         });
     }
 };
-
 
 exports.getReactionCountsByPodcastId = async (req, res) => {
     try {

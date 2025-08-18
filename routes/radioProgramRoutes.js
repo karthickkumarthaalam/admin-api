@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const radioProgramController = require("../controllers/radioProgramController");
 
+router.get("/live-program", radioProgramController.getCurrentProgram);
 router.post("/", radioProgramController.createRadioProgram);
 router.get("/", radioProgramController.getAllRadioPrograms);
 router.get("/:id", radioProgramController.getRadioProgramById);

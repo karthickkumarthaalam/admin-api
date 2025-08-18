@@ -230,12 +230,45 @@ const sendRjPasswordEmail = async (toEmail, toName, plainPassword) => {
 
     return await sendEmail({
         toEmail,
-        subject: "Your RJ Profile Credentials - Thaalam Media",
+        subject: "Your User profile Credentials - Thaalam Media",
         htmlContent,
         attachments,
     });
 };
 
+const sendEnquiryEmail = async (toEmail, toName, subjectText, messageText) => {
+    const htmlContent = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2>Hello ${toName}, </h2>
+        <p>Thank you for getting in touch with <strong>Thaalam Media</strong>!</p>
+        <p>We have received your enquiry and our team will get back to you soon.</p>
+      
+        <h3 style="margin-top: 20px;">Your Enquiry Details:</h3>
+        <p> ${subjectText}</p>
+        <p> ${messageText}</p>
+
+        <p style="margin-top: 20px;">We appreciate your interest and will respond as quickly as possible.</p>
+        <p>Regards,<br>Thaalam Media Team</p>
+
+        <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
+    </div>
+    `;
+
+    const attachments = [
+        {
+            filename: "thaalam-logo.png",
+            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+            cid: "logoimage",
+        }
+    ];
+
+    return await sendEmail({
+        toEmail,
+        subject: "We’ve Received Your Enquiry - Thaalam Media",
+        htmlContent,
+        attachments
+    });
+};
 
 
 module.exports = {
@@ -247,5 +280,6 @@ module.exports = {
     sendGracePeriodEmail,
     sendPaymentReceiptEmail,
     generateOTP,
-    sendRjPasswordEmail
+    sendRjPasswordEmail,
+    sendEnquiryEmail
 };

@@ -69,6 +69,7 @@ app.use("/api/budget", require("./routes/budgetRoutes"));
 app.use("/api/budget-tax", require("./routes/budgetTaxesRoutes"));
 app.use("/api/budget-merchant", require("./routes/budgetMerchantRoutes"));
 app.use("/api/budget-units", require("./routes/budgetUnitsRoutes"));
+app.use("/api/enquiry", require("./routes/enquiryRoutes"));
 
 const io = new Server(server, {
     cors: {

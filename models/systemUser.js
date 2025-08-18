@@ -75,6 +75,10 @@ module.exports = (sequelize, DataTypes) => {
         is_admin: {
             type: DataTypes.BOOLEAN,
             defaultValue: false
+        },
+        show_profile: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false
         }
     }, {
         tableName: 'system_users',
@@ -89,6 +93,10 @@ module.exports = (sequelize, DataTypes) => {
         SystemUsers.belongsTo(models.User, {
             foreignKey: "user_id",
             as: "users"
+        });
+        SystemUsers.hasMany(models.RadioProgram, {
+            foreignKey: 'rj_id',
+            as: 'radio_programs'
         });
     };
 

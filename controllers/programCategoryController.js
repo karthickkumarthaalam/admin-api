@@ -41,7 +41,8 @@ exports.getAllProgramCategories = async (req, res) => {
         const result = await pagination(ProgramCategory, {
             page,
             limit,
-            where: whereCondition
+            where: whereCondition,
+            order: [["start_time", "ASC"]]
         });
 
         return res.status(200).json({ status: "success", message: "Program Categories fetched successfully", data: result.data, pagination: result.pagination });

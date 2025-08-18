@@ -1,6 +1,8 @@
 const { RadioProgram, ProgramCategory, SystemUsers, RadioStation } = require("../models");
-const { Op } = require("sequelize");
+const { Op, Sequelize } = require("sequelize");
 const pagination = require("../utils/pagination");
+const moment = require("moment-timezone");
+
 
 exports.createRadioProgram = async (req, res) => {
     try {
@@ -180,3 +182,88 @@ exports.deleteRadioProgram = async (req, res) => {
         res.status(500).json({ message: "Failed to delete radio program.", error: error.message });
     }
 };
+
+
+exports.getCurrentProgram = async (req, res) => {
+    try {
+        const nowCH = moment().tz("Europe/Zurich");
+        const currentTime = nowCH.format("HH:mm:ss");
+
+        // Current running program
+        const program = await RadioProgram.findOne({
+            include: [
+                { model: ProgramCategory, as: "program_category" },
+                { model: SystemUsers, as: "system_users" },
+                { model: RadioStation, as: "radio_station" },
+            ],
+            where: {
+                status: "active",
+                [Op.or]: [
+                    // Normal case: start <= now <= end
+                    {
+                        [Op.and]: [
+                            Sequelize.where(Sequelize.col("program_category.start_time"), "<=", currentTime),
+                            Sequelize.where(Sequelize.col("program_category.end_time"), ">=", currentTime)
+                        ]
+                    },
+                    // Midnight wrap: start > end, so now is after start or before end
+                    {
+                        [Op.and]: [
+                            Sequelize.where(Sequelize.col("program_category.start_time"), ">", Sequelize.col("program_category.end_time")),
+                            {
+                                [Op.or]: [
+                                    Sequelize.where(Sequelize.col("program_category.start_time"), "<=", currentTime),
+                                    Sequelize.where(Sequelize.col("program_category.end_time"), ">=", currentTime)
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            order: [[Sequelize.col("program_category.start_time"), "ASC"]]
+        });
+
+        if (!program) {
+            return res.status(404).json({ message: "No program currently running" });
+        }
+
+        // Minutes left
+        let endTime = moment.tz(program.program_category.end_time, "HH:mm:ss", "Europe/Zurich");
+        if (endTime.isBefore(nowCH)) {
+            endTime.add(1, "day");
+        }
+        const minutesLeft = endTime.diff(nowCH, "minutes");
+
+        // Next program (including next day wrap-around)
+        let nextProgram = await RadioProgram.findOne({
+            include: [{ model: ProgramCategory, as: "program_category" }],
+            where: {
+                status: "active",
+                [Op.and]: [
+                    Sequelize.where(Sequelize.col("program_category.start_time"), ">", program.program_category.start_time)
+                ]
+            },
+            order: [[Sequelize.col("program_category.start_time"), "ASC"]]
+        });
+
+        if (!nextProgram) {
+            // Wrap to the first program of the next day
+            nextProgram = await RadioProgram.findOne({
+                include: [{ model: ProgramCategory, as: "program_category" }],
+                where: { status: "active" },
+                order: [[Sequelize.col("program_category.start_time"), "ASC"]]
+            });
+        }
+
+        res.json({
+            current: program,
+            next: nextProgram || null,
+            minutesLeft
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Error fetching current program" });
+    }
+};
+

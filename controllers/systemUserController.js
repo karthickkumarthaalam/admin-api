@@ -1,5 +1,5 @@
-const { SystemUsers, Department, User } = require("../models");
-const { Op } = require("sequelize");
+const { SystemUsers, Department, User, RadioProgram, ProgramCategory } = require("../models");
+const { Op, Sequelize } = require("sequelize");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
 const pagination = require("../utils/pagination");
@@ -13,7 +13,7 @@ exports.createSystemUser = async (req, res) => {
         const {
             name, email, gender, date_of_birth,
             phone_number, whatsapp_number, address,
-            country, state, city, description, department_id, share_access, is_admin
+            country, state, city, description, department_id, share_access, is_admin, show_profile
         } = req.body;
 
         const existingUser = await SystemUsers.findOne({ where: { email } });
@@ -38,7 +38,7 @@ exports.createSystemUser = async (req, res) => {
 
         const systemUser = await SystemUsers.create({
             name, email, gender, date_of_birth, phone_number, whatsapp_number,
-            address, country, state, city, description, department_id, status: "inactive", image_url: imageUrl, user_id: user.id, is_admin
+            address, country, state, city, description, department_id, status: "inactive", image_url: imageUrl, user_id: user.id, is_admin, show_profile
         });
 
         if (share_access === true || share_access === "true") {
@@ -165,6 +165,9 @@ exports.getAllSystemUsers = async (req, res) => {
             ];
         }
 
+        if (req.query.show_profile) {
+            filterConditions.show_profile = req.query.show_profile === "true";
+        }
 
         if (req.query.department) {
             const departmentNameQuery = `%${req.query.department}%`;
@@ -207,3 +210,100 @@ exports.getSystemUserById = async (req, res) => {
         res.status(500).json({ message: "Failed to fetch user", error: error.message });
     }
 };
+
+
+exports.getSystemUsersWithPrograms = async (req, res) => {
+    try {
+        const limit = req.query.limit ? parseInt(req.query.limit) : null;
+        const skipId = req.query.skipId ? parseInt(req.query.skipId) : null;
+
+        const whereCondition = { show_profile: true };
+        if (skipId) {
+            whereCondition.id = { [Op.ne]: skipId };
+        }
+
+        const users = await SystemUsers.findAll({
+            where: whereCondition,
+            attributes: ["id", "name", "image_url"],
+            include: [
+                {
+                    model: RadioProgram,
+                    as: "radio_programs",
+                    required: false,
+                    include: [
+                        {
+                            model: ProgramCategory,
+                            as: "program_category",
+                            attributes: ["id", "category"]
+                        }
+                    ],
+                }
+            ],
+            limit: limit || undefined,
+            order: limit ? Sequelize.literal('RAND()') : [['id', 'ASC']]
+        });
+
+
+        const formatted = users.map(user => ({
+            id: user.id,
+            name: user.name,
+            image: user.image_url,
+            categories: [
+                ...new Set(
+                    (user.radio_programs || [])
+                        .map(rp => rp.program_category?.category)
+                        .filter(Boolean)
+                )
+            ]
+        }));
+
+        res.status(200).json({ success: true, data: formatted });
+    } catch (error) {
+        console.error("Error fetching users with programs:", error);
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};
+
+exports.getRjUserProfile = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        const user = await SystemUsers.findByPk(id, {
+            attributes: ["id", "name", "image_url", "description"],
+            include: [
+                {
+                    model: RadioProgram,
+                    as: "radio_programs",
+                    include: [
+                        {
+                            model: ProgramCategory,
+                            as: "program_category",
+                            attributes: ["id", "category", "start_time", "end_time"]
+                        }
+                    ]
+                }
+            ]
+        });
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found" });
+        }
+
+        const formattedUser = {
+            id: user.id,
+            name: user.name,
+            imageUrl: user.image_url,
+            description: user.description,
+            radioPrograms: user.radio_programs.map(program => ({
+                id: program.id,
+                category: program.program_category.category,
+                startTime: program.program_category.start_time,
+                endTime: program.program_category.end_time
+            }))
+        };
+
+        return res.status(200).json({ success: true, data: formattedUser });
+    } catch (error) {
+        res.status(500).json({ success: false, message: "Internal server error" });
+    }
+};  
