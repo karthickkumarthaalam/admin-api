@@ -62,6 +62,7 @@ db.BudgetTaxApplication = require("./budgetTaxApplication")(sequelize, Sequelize
 db.BudgetMerchant = require("./budgetMerchant")(sequelize, Sequelize);
 db.BudgetUnits = require("./budgetUnits")(sequelize, Sequelize);
 db.Enquiry = require("./enquiry")(sequelize, Sequelize);
+db.Careers = require("./careers")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
     if (db[modelName].associate) {

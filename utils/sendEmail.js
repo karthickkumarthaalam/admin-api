@@ -270,6 +270,41 @@ const sendEnquiryEmail = async (toEmail, toName, subjectText, messageText) => {
     });
 };
 
+const sendCareerEmail = async (toEmail, toName, subjectText) => {
+    const htmlContent = `
+    <div style="font-family: Arial, sans-serif; color: #333;">
+        <h2>Hello ${toName},</h2>
+        <p>Thank you for applying to <strong>Thaalam Media</strong>!</p>
+        <p>We have successfully received your application. Our recruitment team will carefully review your profile and get back to you if your qualifications match our requirements.</p>
+        
+        <h3 style="margin-top: 20px;">Your Application Summary:</h3>
+        <p><strong>Position Applied:</strong> ${subjectText}</p>
+
+        <p style="margin-top: 20px;">Please note: If your profile is shortlisted, our HR team will contact you within the next few weeks.</p>
+        <p>We appreciate the time and effort you put into your application, and we wish you the best of luck in the process.</p>
+
+        <p style="margin-top: 20px;">Regards,<br>Thaalam Media HR Team</p>
+
+        <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
+    </div>
+    `;
+
+    const attachments = [
+        {
+            filename: "thaalam-logo.png",
+            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+            cid: "logoimage",
+        }
+    ];
+
+    return await sendEmail({
+        toEmail,
+        subject: "Thank you for Applying - Thaalam Media",
+        htmlContent,
+        attachments
+    });
+};
+
 
 module.exports = {
     sendEmail,
@@ -281,5 +316,6 @@ module.exports = {
     sendPaymentReceiptEmail,
     generateOTP,
     sendRjPasswordEmail,
-    sendEnquiryEmail
+    sendEnquiryEmail,
+    sendCareerEmail
 };
