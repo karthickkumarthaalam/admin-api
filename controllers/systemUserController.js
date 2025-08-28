@@ -180,7 +180,7 @@ exports.getAllSystemUsers = async (req, res) => {
             page,
             limit,
             where: filterConditions,
-            order: [["createdAt", "DESC"]],
+            order: [["createdAt", "ASC"]],
             include: includeConditions
         });
 
@@ -224,7 +224,7 @@ exports.getSystemUsersWithPrograms = async (req, res) => {
 
         const users = await SystemUsers.findAll({
             where: whereCondition,
-            attributes: ["id", "name", "image_url"],
+            attributes: ["id", "name", "image_url", "description"],
             include: [
                 {
                     model: RadioProgram,
@@ -234,7 +234,7 @@ exports.getSystemUsersWithPrograms = async (req, res) => {
                         {
                             model: ProgramCategory,
                             as: "program_category",
-                            attributes: ["id", "category"]
+                            attributes: ["id", "category", "start_time", "end_time"]
                         }
                     ],
                 }
@@ -248,13 +248,12 @@ exports.getSystemUsersWithPrograms = async (req, res) => {
             id: user.id,
             name: user.name,
             image: user.image_url,
-            categories: [
-                ...new Set(
-                    (user.radio_programs || [])
-                        .map(rp => rp.program_category?.category)
-                        .filter(Boolean)
-                )
-            ]
+            description: user.description,
+            shows: (user.radio_programs || []).map(rp => ({
+                category: rp.program_category?.category || null,
+                startTime: rp.program_category?.start_time || null,
+                endTime: rp.program_category?.end_time || null,
+            }))
         }));
 
         res.status(200).json({ success: true, data: formatted });

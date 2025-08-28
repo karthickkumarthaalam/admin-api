@@ -1,5 +1,6 @@
 const db = require("../models");
-const { PodcastReaction } = db;
+const { Op } = require("sequelize");
+const { PodcastReaction, Members } = db;
 
 exports.addorupdateReaction = async (req, res) => {
     try {
@@ -123,6 +124,42 @@ exports.getReactionCountsByPodcastId = async (req, res) => {
         res.status(500).json({
             status: "error",
             message: "Failed to fetch reaction counts",
+            error: error.message
+        });
+    }
+};
+
+
+exports.getUserReaction = async (req, res) => {
+    try {
+        const { id, member_id } = req.params;
+
+        if (!id || !member_id) {
+            return res.status(400).json({ status: "error", message: "podcast Id and Member Id is required" });
+        }
+
+        const member = await Members.findOne({ where: { member_id: member_id } });
+
+        if (!member) {
+            return res.status(400).json({ status: "error", message: "Member not found" });
+        }
+
+        const reaction = await PodcastReaction.findOne({
+            where: {
+                podcast_id: id,
+                member_id: member.id,
+            }
+        });
+
+        return res.json({
+            status: "success",
+            reaction: reaction ? reaction.reaction : null
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            status: "error",
+            message: "Server Error while fetching reactions",
             error: error.message
         });
     }

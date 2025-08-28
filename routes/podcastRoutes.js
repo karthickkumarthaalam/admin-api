@@ -17,6 +17,7 @@ router.delete("/:comment_id/comments", podcastCommentController.deleteComment);
 //reaction 
 router.post("/reaction", podcastReactionController.addorupdateReaction);
 router.get("/:podcastId/reactions", podcastReactionController.getReactionCountsByPodcastId);
+router.get("/:id/reaction/:member_id", podcastReactionController.getUserReaction);
 router.get("/reaction-stats", podcastController.getPodcastReactions);
 
 router.get("/admin", authenticateToken, (req, res, next) => {

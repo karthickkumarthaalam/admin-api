@@ -257,7 +257,7 @@ exports.changePassword = async (req, res) => {
         const hashedPassword = await bcrypt.hash(newPassword, 10);
         await member.update({ password: hashedPassword });
 
-        res.status(200).json({ message: "Password updated successfully" });
+        res.status(200).json({ status: "success", message: "Password updated successfully" });
 
     } catch (error) {
         res.status(500).json({ message: "Failed to update password", error: error.message });
