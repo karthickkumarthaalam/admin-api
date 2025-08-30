@@ -25,6 +25,10 @@ module.exports = (sequelize, DataTypes) => {
             type: DataTypes.ENUM("active", "in-active"),
             allowNull: false,
             defaultValue: "in-active"
+        },
+        image_url: {
+            type: DataTypes.STRING,
+            allowNull: true,
         }
     }, {
         tableName: "program_category"

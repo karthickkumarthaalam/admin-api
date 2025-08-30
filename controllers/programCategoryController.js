@@ -1,9 +1,12 @@
 const db = require("../models");
+const fs = require("fs");
 const pagination = require("../utils/pagination");
+const { uploadToCpanel } = require("../services/uploadToCpanel");
 const { ProgramCategory } = db;
 
 // Create Program Category
 exports.createProgramCategory = async (req, res) => {
+    const image = req.files["image"] ? req.files["image"][0] : null;
     try {
         const { category, start_time, end_time, country } = req.body;
 
@@ -11,17 +14,30 @@ exports.createProgramCategory = async (req, res) => {
             return res.status(400).json({ status: "error", message: "Category, Start Time and End Time are required." });
         }
 
+        let image_url = null;
+
+        if (image && image.path) {
+            image_url = await uploadToCpanel(
+                image.path,
+                "programBanner/images",
+                image.originalname
+            );
+            fs.unlinkSync(image.path);
+        }
+
         const programCategory = await ProgramCategory.create({
             category,
             start_time,
             end_time,
             country,
+            image_url,
             status: "in-active"
         });
 
         res.status(201).json({ status: "success", message: "Program Category created successfully", data: programCategory });
 
     } catch (error) {
+        if (image && fs.existsSync(image.path)) fs.unlinkSync(image.path);
         res.status(500).json({ status: "error", message: "Failed to create Program Category", error: error.message });
     }
 };
@@ -94,6 +110,7 @@ exports.updateStatus = async (req, res) => {
 
 // Update Program Category
 exports.updateProgramCategory = async (req, res) => {
+    const image = req.files["image"] ? req.files["image"][0] : null;
     try {
         const { id } = req.params;
         const { category, start_time, end_time, country } = req.body;
@@ -102,6 +119,18 @@ exports.updateProgramCategory = async (req, res) => {
 
         if (!programCategory) {
             return res.status(404).json({ status: "error", message: "Program Category not found" });
+        }
+
+        if (image && image.path) {
+            let image_url = await uploadToCpanel(
+                image.path,
+                "programBanner/images",
+                image.originalname
+            );
+            programCategory.image_url = image_url;
+            fs.unlinkSync(image.path);
+        } else if (image === null || image === "null") {
+            programCategory.image_url = null;
         }
 
         programCategory.category = category || programCategory.category;
@@ -113,6 +142,7 @@ exports.updateProgramCategory = async (req, res) => {
 
         return res.status(200).json({ status: "success", message: "Program Category updated successfully", data: programCategory });
     } catch (error) {
+        if (image && fs.existsSync(image.path)) fs.unlinkSync(image.path);
         res.status(500).json({ status: "error", message: "Failed to update Program Category", error: error.message });
     }
 };
