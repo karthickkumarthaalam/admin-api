@@ -16,6 +16,11 @@ module.exports = () => {
         const preExpiryDateStart = moment().add(2, "days").startOf("day").toDate();
         const preExpiryDateEnd = moment().add(2, "days").endOf("day").toDate();
         const graceExpiryLimit = moment().subtract(3, "days").endOf("day").toDate();
+        console.log(todayStart, "todayStart");
+        console.log(todayEnd, "todayEnd");
+        console.log(preExpiryDateStart, "preExpiredDateStart");
+        console.log(preExpiryDateEnd, "PreExpiredDateEnd");
+        console.log(graceExpiryLimit, "graceExpiredLimit");
 
         // Packages expiring today
         const expiringToday = await MemberPackage.findAll({
@@ -30,6 +35,7 @@ module.exports = () => {
         });
 
         for (const pkg of expiringToday) {
+            console.log(pkg.id);
             const member = pkg.member;
             const packageData = pkg.package;
             if (!member || !packageData) continue;
@@ -119,6 +125,7 @@ module.exports = () => {
                 }
             } else {
                 // No auto-renew, move to grace period
+                console.log("marking flag 1");
                 try {
                     await pkg.update({ status: "grace_period" });
                     await sendGracePeriodEmail(member.email, member.name, pkg.end_date);
@@ -128,7 +135,7 @@ module.exports = () => {
                 }
             }
         }
-
+        console.log("flag 2");
         // Packages that expired after grace period
         const graceExpired = await MemberPackage.findAll({
             where: {
@@ -137,6 +144,7 @@ module.exports = () => {
             },
             include: [{ model: Members, as: "member" }]
         });
+        console.log("flag 3");
 
         for (const pkg of graceExpired) {
             const member = pkg.member;
@@ -150,7 +158,7 @@ module.exports = () => {
                 console.error(`Failed to expire package ${pkg.id}:`, err.message);
             }
         }
-
+        console.log("flag 4");
         // Packages expiring soon (pre-expiry email)
         const expiringSoon = await MemberPackage.findAll({
             where: {
@@ -159,7 +167,7 @@ module.exports = () => {
             },
             include: [{ model: Members, as: "member", attributes: ["id", "name", "email"] }]
         });
-
+        console.log("flag 5");
         for (const pkg of expiringSoon) {
             const member = pkg.member;
             if (!member) continue;
