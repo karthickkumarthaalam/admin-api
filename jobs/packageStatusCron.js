@@ -7,31 +7,37 @@ const { sendExpiryEmail, sendPreExpiryEmail, sendPaymentReceiptEmail, sendGraceP
 
 module.exports = () => {
 
-    cron.schedule("0 0 * * *", async () => {
+    cron.schedule("* * * * *", async () => {
         console.log("Running Package expiry check...");
 
-        const today = moment().format("YYYY-MM-DD");
-        const preExpiryDate = moment().add(2, "days").format("YYYY-MM-DD");
-        const graceExpiryLimit = moment().subtract(3, "days").format("YYYY-MM-DD");
+        // Use start/end of day to handle timezone correctly
+        const todayStart = moment().startOf("day").toDate();
+        const todayEnd = moment().endOf("day").toDate();
+        const preExpiryDateStart = moment().add(2, "days").startOf("day").toDate();
+        const preExpiryDateEnd = moment().add(2, "days").endOf("day").toDate();
+        const graceExpiryLimit = moment().subtract(3, "days").endOf("day").toDate();
 
+        // Packages expiring today
         const expiringToday = await MemberPackage.findAll({
             where: {
-                end_date: today,
+                end_date: { [Op.between]: [todayStart, todayEnd] },
                 status: "active"
             },
-            include: [{ model: Members, as: "member" }, { model: Package, as: "package" }]
+            include: [
+                { model: Members, as: "member" },
+                { model: Package, as: "package" }
+            ]
         });
 
         for (const pkg of expiringToday) {
             const member = pkg.member;
             const packageData = pkg.package;
-
-            if (!member) continue;
+            if (!member || !packageData) continue;
 
             if (member.auto_renew && member.payment_method_id) {
                 try {
-                    let startDate = moment(pkg.start_date);
-                    let endDate = moment(pkg.end_date);
+                    const startDate = moment(pkg.start_date);
+                    const endDate = moment(pkg.end_date);
                     const durationInDays = endDate.diff(startDate, "days");
 
                     let amount = 0;
@@ -44,10 +50,11 @@ module.exports = () => {
                         amount = packageData.price * 100;
                         durationLabel = 'month';
                     } else {
-                        console.error(`unknown duration for package ${pkg.id}`);
+                        console.error(`Unknown package duration for ID ${pkg.id}`);
                         continue;
                     }
 
+                    // Stripe auto payment
                     const paymentIntent = await stripe.paymentIntents.create({
                         amount,
                         currency: 'chf',
@@ -65,6 +72,7 @@ module.exports = () => {
                     const charge = await stripe.charges.retrieve(paymentIntent.latest_charge);
                     const receiptUrl = charge.receipt_url;
 
+                    // Record transaction
                     await Transaction.create({
                         transaction_id: paymentIntent.id,
                         member_id: member.id,
@@ -74,6 +82,7 @@ module.exports = () => {
                         payment_proof: null
                     });
 
+                    // Update package dates
                     const newStartDate = moment();
                     const newEndDate = moment(newStartDate).add(durationLabel === 'month' ? 1 : 12, 'months');
 
@@ -81,7 +90,8 @@ module.exports = () => {
                         status: 'active',
                         purchase_date: newStartDate.toDate(),
                         start_date: newStartDate.toDate(),
-                        end_date: newEndDate.toDate()
+                        end_date: newEndDate.toDate(),
+                        transaction_id: paymentIntent.id // ensure transaction_id is set
                     });
 
                     await sendPaymentReceiptEmail(
@@ -94,22 +104,35 @@ module.exports = () => {
                     );
 
                     console.log(`Auto-renewed package for ${member.name}`);
-                } catch (error) {
-                    console.error(`Failed to auto-renew for ${member.name}:`, error.message);
+
+                } catch (err) {
+                    console.error(`Auto-renew failed for ${member.name}:`, err.message);
+
+                    // If Stripe fails, move package to grace period
+                    try {
+                        await pkg.update({ status: "grace_period" });
+                        await sendGracePeriodEmail(member.email, member.name, pkg.end_date);
+                        console.log(`Package moved to grace period for ${member.name}`);
+                    } catch (updateErr) {
+                        console.error(`Failed to update status for ${member.name}:`, updateErr.message);
+                    }
                 }
             } else {
-                await pkg.update({ status: "grace_period" });
-                await sendGracePeriodEmail(member.email, member.name, pkg.end_date);
-
-                console.log(`Package moved to grace period for ${member.name}`);
+                // No auto-renew, move to grace period
+                try {
+                    await pkg.update({ status: "grace_period" });
+                    await sendGracePeriodEmail(member.email, member.name, pkg.end_date);
+                    console.log(`Package moved to grace period for ${member.name}`);
+                } catch (updateErr) {
+                    console.error(`Failed to update status for ${member.name}:`, updateErr.message);
+                }
             }
         }
 
+        // Packages that expired after grace period
         const graceExpired = await MemberPackage.findAll({
             where: {
-                end_date: {
-                    [Op.lte]: graceExpiryLimit
-                },
+                end_date: { [Op.lte]: graceExpiryLimit },
                 status: "grace_period"
             },
             include: [{ model: Members, as: "member" }]
@@ -119,15 +142,19 @@ module.exports = () => {
             const member = pkg.member;
             if (!member) continue;
 
-            await sendExpiryEmail(member.email, member.name, pkg.end_date);
-            await pkg.update({ status: "expired" });
-
-            console.log(`Package expired after grace for ${member.name}`);
+            try {
+                await sendExpiryEmail(member.email, member.name, pkg.end_date);
+                await pkg.update({ status: "expired" });
+                console.log(`Package expired after grace for ${member.name}`);
+            } catch (err) {
+                console.error(`Failed to expire package ${pkg.id}:`, err.message);
+            }
         }
 
+        // Packages expiring soon (pre-expiry email)
         const expiringSoon = await MemberPackage.findAll({
             where: {
-                end_date: preExpiryDate,
+                end_date: { [Op.between]: [preExpiryDateStart, preExpiryDateEnd] },
                 status: "active"
             },
             include: [{ model: Members, as: "member", attributes: ["id", "name", "email"] }]
@@ -137,9 +164,12 @@ module.exports = () => {
             const member = pkg.member;
             if (!member) continue;
 
-            await sendPreExpiryEmail(member.email, member.name, pkg.end_date);
-
-            console.log(`Pre-expiry email sent for package ID ${pkg.id}`);
+            try {
+                await sendPreExpiryEmail(member.email, member.name, pkg.end_date);
+                console.log(`Pre-expiry email sent for package ID ${pkg.id}`);
+            } catch (err) {
+                console.error(`Failed to send pre-expiry email for ${pkg.id}:`, err.message);
+            }
         }
 
         console.log("Package expiry check completed.");

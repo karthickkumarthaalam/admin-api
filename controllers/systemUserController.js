@@ -240,7 +240,7 @@ exports.getSystemUsersWithPrograms = async (req, res) => {
                 }
             ],
             limit: limit || undefined,
-            order: limit ? Sequelize.literal('RAND()') : [['id', 'ASC']]
+            order: limit ? Sequelize.literal('RAND()') : [['id', 'DESC']]
         });
 
 
