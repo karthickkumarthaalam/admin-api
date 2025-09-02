@@ -42,6 +42,11 @@ exports.getCurrencies = async (req, res) => {
             ];
         }
 
+        if (req.query.showDeleted === "true") {
+            filterConditions.is_deleted = true;
+        } else {
+            filterConditions.is_deleted = false;
+        }
 
         const result = await pagination(Currency, {
             page,
@@ -93,10 +98,27 @@ exports.deleteCurrency = async (req, res) => {
             return res.status(404).json({ message: "Currency not found" });
         }
 
-        await currency.destroy();
+        await currency.update({ is_deleted: true, deleted_at: new Date() });
 
         return res.status(200).json({ message: "Currency deleted successfully" });
     } catch (error) {
         return res.status(500).json({ messsage: "Error deleting currency", error: error.message });
+    }
+};
+
+exports.restoreCurrency = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const currency = await Currency.findOne({ where: { id } });
+
+        if (!currency) {
+            return res.status(404).json({ message: "Currency not found" });
+        }
+
+        await currency.update({ is_deleted: false, deleted_at: null });
+
+        return res.status(200).json({ message: "Currency restored successfully" });
+    } catch (error) {
+        return res.status(500).json({ message: "Error restoring currency", error: error.message });
     }
 };

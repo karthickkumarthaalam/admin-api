@@ -21,6 +21,14 @@ module.exports = (sequelize, DataTypes) => {
         symbol: {
             type: DataTypes.STRING,
             allowNull: false,
+        },
+        is_deleted: {
+            type: DataTypes.BOOLEAN,
+            defaultValue: false,
+        },
+        deleted_at: {
+            type: DataTypes.DATE,
+            allowNull: true,
         }
     });
 
