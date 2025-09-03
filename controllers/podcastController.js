@@ -381,3 +381,24 @@ exports.streamAudio = async (req, res) => {
     const audioUrl = `https://thaalam.ch/podcast/audio/${fileName}`;
     return res.redirect(audioUrl);
 };
+
+exports.getMetaData = async (req, res) => {
+    const { id } = req.params;
+    try {
+        const podcast = await Podcast.findByPk(id);
+
+        if (!podcast) {
+            return res.status(404).json({ message: "Podcast not found" });
+        }
+
+        res.json({
+            title: podcast.title,
+            description: podcast.description,
+            image: podcast.image_url,
+        });
+
+    }
+    catch (error) {
+        res.status(500).json({ message: "Failed to Get Meta data", error: error.message });
+    }
+};

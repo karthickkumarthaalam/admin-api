@@ -7,6 +7,9 @@ const podcastReactionController = require("../controllers/podcastReactionControl
 const { authenticateToken } = require("../middlewares/authMiddleware");
 
 
+//Meta data
+router.get("/:id/meta-data", podcastController.getMetaData);
+
 //comment
 router.post("/comments", podcastCommentController.addComment);
 router.get("/comments", authenticateToken, podcastCommentController.commentList);
