@@ -18,14 +18,14 @@ const app = express();
 const server = http.createServer(app);
 
 app.use(
-    cors({
-        origin: (origin, callback) => {
-            callback(null, origin);
-        },
-        credentials: true,
-        methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-        allowedHeaders: ["Content-Type", "Authorization"],
-    })
+  cors({
+    origin: (origin, callback) => {
+      callback(null, origin);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
 );
 
 const webhookRoute = require("./routes/webhookRoutes");
@@ -34,7 +34,6 @@ app.use("/api/payments/webhook", webhookRoute);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-
 
 app.use("/api/uploads", express.static(path.join(__dirname, "uploads")));
 
@@ -72,30 +71,32 @@ app.use("/api/budget-units", require("./routes/budgetUnitsRoutes"));
 app.use("/api/enquiry", require("./routes/enquiryRoutes"));
 app.use("/api/careers", require("./routes/careerRoutes"));
 app.use("/api/advertisement", require("./routes/advertisementRoutes"));
+app.use("/api/financial-year", require("./routes/financialYearRoutes"));
+app.use("/api/expense-bills", require("./routes/expenseBillRoutes"));
 
 const io = new Server(server, {
-    cors: {
-        origin: (origin, callback) => {
-            callback(null, origin);
-        },
-        credentials: true,
-        methods: ["GET", "POST", "PATCH"],
-    }
+  cors: {
+    origin: (origin, callback) => {
+      callback(null, origin);
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PATCH"],
+  },
 });
 const pubClient = createClient({ url: "redis://localhost:6379" });
 const subClient = pubClient.duplicate();
 
 Promise.all([pubClient.connect(), subClient.connect()])
-    .then(() => {
-        io.adapter(createAdapter(pubClient, subClient));
-        const initAllSockets = require("./sockets");
-        initAllSockets(io);
-    })
-    .catch((err) => {
-        console.error("Redis connection error:", err);
-    });
+  .then(() => {
+    io.adapter(createAdapter(pubClient, subClient));
+    const initAllSockets = require("./sockets");
+    initAllSockets(io);
+  })
+  .catch((err) => {
+    console.error("Redis connection error:", err);
+  });
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-    console.log(`Server with Socket.IO running on port ${PORT}`);
+  console.log(`Server with Socket.IO running on port ${PORT}`);
 });
