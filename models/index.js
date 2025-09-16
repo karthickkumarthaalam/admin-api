@@ -72,6 +72,7 @@ db.Advertisement = require("./advertisement")(sequelize, Sequelize);
 db.FinancialYear = require("./financialYear")(sequelize, Sequelize);
 db.ExpenseBill = require("./expenseBills")(sequelize, Sequelize);
 db.ExpenseBillItem = require("./expenseBillItem")(sequelize, Sequelize);
+db.AgreementCategory = require("./agreementCategory")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {

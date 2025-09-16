@@ -103,7 +103,7 @@ exports.createExpenseBill = async (req, res) => {
 exports.getAllExpenseBills = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit) || 200;
 
     // Build where condition dynamically
     const whereCondition = {};

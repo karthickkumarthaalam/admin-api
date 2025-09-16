@@ -73,6 +73,7 @@ app.use("/api/careers", require("./routes/careerRoutes"));
 app.use("/api/advertisement", require("./routes/advertisementRoutes"));
 app.use("/api/financial-year", require("./routes/financialYearRoutes"));
 app.use("/api/expense-bills", require("./routes/expenseBillRoutes"));
+app.use("/api/agreement-category", require("./routes/agreementCategoryRoutes"));
 
 const io = new Server(server, {
   cors: {
