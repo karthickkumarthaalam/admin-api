@@ -17,7 +17,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: true,
         references: {
-          model: "users", // MySQL table name
+          model: "Users", // MySQL table name
           key: "id",
         },
         onDelete: "CASCADE",
