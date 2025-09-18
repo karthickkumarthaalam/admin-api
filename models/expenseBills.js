@@ -32,7 +32,7 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
       type: {
-        type: DataTypes.ENUM("income", "expense"),
+        type: DataTypes.ENUM("income", "expense", "payable"),
         defaultValue: "expense",
         allowNull: false,
       },
