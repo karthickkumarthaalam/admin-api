@@ -73,6 +73,9 @@ db.FinancialYear = require("./financialYear")(sequelize, Sequelize);
 db.ExpenseBill = require("./expenseBills")(sequelize, Sequelize);
 db.ExpenseBillItem = require("./expenseBillItem")(sequelize, Sequelize);
 db.AgreementCategory = require("./agreementCategory")(sequelize, Sequelize);
+db.PayslipComponent = require("./payslipComponent")(sequelize, Sequelize);
+db.Payslip = require("./payslip")(sequelize, Sequelize);
+db.PayslipItem = require("./payslipItem")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {

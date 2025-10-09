@@ -16,6 +16,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         onDelete: "CASCADE",
       },
+      employee_id: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       name: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -82,6 +86,26 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      bank_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      ifsc_code: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      account_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      pan_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      uan_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "system_users",
@@ -103,6 +127,10 @@ module.exports = (sequelize, DataTypes) => {
     SystemUsers.hasMany(models.RadioProgram, {
       foreignKey: "rj_id",
       as: "radio_programs",
+    });
+    SystemUsers.hasMany(models.Payslip, {
+      foreignKey: "user_id",
+      as: "payslips",
     });
   };
 
