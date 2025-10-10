@@ -24,6 +24,8 @@ exports.createPayslip = async (req, res) => {
       total_earnings,
       total_deductions,
       net_salary,
+      conversion_currency_id,
+      converted_net_salary,
     } = req.body;
     const created_by = req.user?.id || null;
 
@@ -50,6 +52,8 @@ exports.createPayslip = async (req, res) => {
       total_deductions: total_deductions || 0,
       net_salary: net_salary || 0,
       created_by,
+      conversion_currency_id,
+      converted_net_salary,
     });
 
     if (items && Array.isArray(items)) {
@@ -143,6 +147,11 @@ exports.getAllPayslips = async (req, res) => {
           attributes: ["id", "code", "symbol"],
         },
         {
+          model: Currency,
+          as: "conversionCurrency",
+          attributes: ["id", "code", "symbol"],
+        },
+        {
           model: PayslipItem,
           as: "items",
           include: [{ model: PayslipComponent, as: "component" }],
@@ -223,6 +232,8 @@ exports.updatePayslip = async (req, res) => {
       total_earnings,
       total_deductions,
       net_salary,
+      converted_net_salary,
+      conversion_currency_id,
     } = req.body;
 
     // Fetch payslip with items
@@ -232,14 +243,18 @@ exports.updatePayslip = async (req, res) => {
     if (!payslip) return res.status(404).json({ message: "Payslip not found" });
 
     // Update main payslip fields
-    payslip.month = month || payslip.month;
-    payslip.paid_date = paid_date || payslip.paid_date;
-    payslip.currency_id = currency_id || payslip.currency_id;
-    payslip.paid_days = paid_days || payslip.paid_days;
-    payslip.lop_days = lop_days || payslip.lop_days;
-    payslip.total_earnings = total_earnings || payslip.total_earnings;
-    payslip.total_deductions = total_deductions || payslip.total_deductions;
-    payslip.net_salary = net_salary || payslip.net_salary;
+    payslip.month = month ?? payslip.month;
+    payslip.paid_date = paid_date ?? payslip.paid_date;
+    payslip.currency_id = currency_id ?? payslip.currency_id;
+    payslip.paid_days = paid_days ?? payslip.paid_days;
+    payslip.lop_days = lop_days ?? payslip.lop_days;
+    payslip.total_earnings = total_earnings ?? payslip.total_earnings;
+    payslip.total_deductions = total_deductions ?? payslip.total_deductions;
+    payslip.net_salary = net_salary ?? payslip.net_salary;
+    payslip.conversion_currency_id =
+      conversion_currency_id ?? payslip.conversion_currency_id;
+    payslip.converted_net_salary =
+      converted_net_salary ?? payslip.converted_net_salary;
 
     await payslip.save();
 
@@ -365,5 +380,49 @@ exports.restorePaySlip = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Error restoring payslip", error });
+  }
+};
+
+exports.verifyData = async (req, res) => {
+  try {
+    const id = parseInt(req.query.id, 10);
+
+    const payslip = await Payslip.findByPk(id, {
+      include: [
+        {
+          model: SystemUsers,
+          as: "user",
+          attributes: ["name", "employee_id"],
+          include: [
+            {
+              model: Department,
+              as: "department",
+              attributes: ["department_name"],
+            },
+          ],
+        },
+        {
+          model: Currency,
+          as: "currency",
+          attributes: ["symbol"],
+        },
+        {
+          model: Currency,
+          as: "conversionCurrency",
+          attributes: ["code", "symbol"],
+        },
+      ],
+    });
+
+    if (!payslip) {
+      return res
+        .status(404)
+        .json({ success: false, message: "payslip not found" });
+    }
+
+    res.status(200).json({ success: true, payslip });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ success: false, message: "Error showing verify" });
   }
 };

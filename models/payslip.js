@@ -33,7 +33,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       paid_date: {
         type: DataTypes.DATEONLY,
-        default: new Date(),
+        default: DataTypes.NOW,
         allowNull: true,
       },
       paid_days: {
@@ -56,6 +56,18 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: 0,
       },
       net_salary: {
+        type: DataTypes.DECIMAL(10, 2),
+        allowNull: false,
+        defaultValue: 0,
+      },
+      conversion_currency_id: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: "Currencies",
+          key: "id",
+        },
+      },
+      converted_net_salary: {
         type: DataTypes.DECIMAL(10, 2),
         allowNull: false,
         defaultValue: 0,
@@ -91,6 +103,11 @@ module.exports = (sequelize, DataTypes) => {
     PaySlip.belongsTo(models.Currency, {
       foreignKey: "currency_id",
       as: "currency",
+    });
+
+    PaySlip.belongsTo(models.Currency, {
+      foreignKey: "conversion_currency_id",
+      as: "conversionCurrency",
     });
   };
 
