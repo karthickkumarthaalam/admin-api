@@ -36,6 +36,19 @@ module.exports = (sequelize, DataTypes) => {
         defaultValue: "expense",
         allowNull: false,
       },
+      currency_id: {
+        type: DataTypes.INTEGER,
+        references: {
+          model: "Currencies",
+          key: "id",
+        },
+        onDelete: "CASCADE",
+      },
+      amount: {
+        type: DataTypes.DECIMAL(10, 2),
+        defaultValue: 0,
+        allowNull: false,
+      },
       created_by: {
         type: DataTypes.INTEGER,
         references: {
@@ -70,6 +83,11 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "created_by",
       targetKey: "user_id",
       as: "creator",
+    });
+
+    ExpenseBill.belongsTo(models.Currency, {
+      foreignKey: "currency_id",
+      as: "currency",
     });
   };
 

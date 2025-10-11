@@ -4,6 +4,7 @@ const {
   ExpenseBill,
   ExpenseBillItem,
   SystemUsers,
+  Currency,
 } = require("../models");
 const {
   uploadToCpanel,
@@ -18,8 +19,16 @@ exports.createExpenseBill = async (req, res) => {
   const uploadedFiles = [];
 
   try {
-    const { financial_year_id, title, vendor, start_date, end_date, type } =
-      req.body;
+    const {
+      financial_year_id,
+      title,
+      vendor,
+      start_date,
+      end_date,
+      type,
+      currency_id,
+      amount,
+    } = req.body;
 
     const expenseBill = await ExpenseBill.create(
       {
@@ -29,6 +38,8 @@ exports.createExpenseBill = async (req, res) => {
         start_date,
         end_date,
         type,
+        currency_id,
+        amount,
         created_by: req.user?.id || null,
       },
       { transaction: t }
@@ -143,6 +154,11 @@ exports.getAllExpenseBills = async (req, res) => {
           attributes: ["id", "bill_address"],
           required: false,
         },
+        {
+          model: Currency,
+          as: "currency",
+          attributes: ["id", "symbol", "code"],
+        },
       ],
       order: [["createdAt", "ASC"]],
     });
@@ -165,7 +181,14 @@ exports.getExpenseBillById = async (req, res) => {
   try {
     const { id } = req.params;
     const expenseBill = await ExpenseBill.findByPk(id, {
-      include: [{ model: ExpenseBillItem, as: "bills" }],
+      include: [
+        { model: ExpenseBillItem, as: "bills" },
+        {
+          model: Currency,
+          as: "currency",
+          attributes: ["id", "symbol", "code"],
+        },
+      ],
     });
 
     if (!expenseBill)
@@ -184,8 +207,16 @@ exports.updateExpenseBill = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const { financial_year_id, title, vendor, start_date, end_date, type } =
-      req.body;
+    const {
+      financial_year_id,
+      title,
+      vendor,
+      start_date,
+      end_date,
+      type,
+      currency_id,
+      amount,
+    } = req.body;
 
     const expenseBill = await ExpenseBill.findByPk(id, { transaction: t });
 
@@ -195,7 +226,16 @@ exports.updateExpenseBill = async (req, res) => {
     }
 
     await expenseBill.update(
-      { financial_year_id, title, vendor, start_date, end_date, type },
+      {
+        financial_year_id,
+        title,
+        vendor,
+        start_date,
+        end_date,
+        type,
+        currency_id,
+        amount,
+      },
       { transaction: t }
     );
 
