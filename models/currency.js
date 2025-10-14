@@ -1,48 +1,47 @@
-
 module.exports = (sequelize, DataTypes) => {
-    const Currency = sequelize.define("Currency", {
-        id: {
-            type: DataTypes.INTEGER,
-            primaryKey: true,
-            autoIncrement: true,
-        },
-        country_name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        currency_name: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        code: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        symbol: {
-            type: DataTypes.STRING,
-            allowNull: false,
-        },
-        is_deleted: {
-            type: DataTypes.BOOLEAN,
-            defaultValue: false,
-        },
-        deleted_at: {
-            type: DataTypes.DATE,
-            allowNull: true,
-        }
+  const Currency = sequelize.define("Currency", {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+    country_name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    currency_name: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    code: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    symbol: {
+      type: DataTypes.STRING,
+      allowNull: false,
+    },
+    is_deleted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+    },
+    deleted_at: {
+      type: DataTypes.DATE,
+      allowNull: true,
+    },
+  });
+
+  Currency.associate = (models) => {
+    Currency.hasMany(models.Package, { foreignKey: "currency_id" });
+    Currency.hasMany(models.ExpenseCategory, {
+      foreignKey: "currency_id",
+      as: "expenseCategories",
     });
+    Currency.belongsTo(models.Budget, {
+      foreignKey: "currency_id",
+      as: "budgetItems",
+    });
+  };
 
-    Currency.associate = (models) => {
-        Currency.hasMany(models.Package, { foreignKey: "currency_id" });
-        Currency.hasMany(models.ExpenseCategory, {
-            foreignKey: "currency_id",
-            as: "expenseCategories"
-        });
-        Currency.belongsTo(models.Budget, {
-            foreignKey: "currency_id",
-            as: "budgetItems"
-        });
-    };
-
-    return Currency;
+  return Currency;
 };
