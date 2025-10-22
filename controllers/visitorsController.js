@@ -7,11 +7,9 @@ const { Visitors } = db;
 exports.trackVisit = async (req, res) => {
   try {
     const data = req.body;
-    const { visitor_id, page } = data;
-    const ip =
-      req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
+    const { visitor_id, page, clientIp } = data;
 
-    const geo = geoip.lookup(ip);
+    const geo = geoip.lookup(clientIp);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -27,7 +25,7 @@ exports.trackVisit = async (req, res) => {
     if (!exists) {
       await Visitors.create({
         visitor_id: visitor_id,
-        ip,
+        ip: clientIp,
         country: geo?.country || "unknown",
         city: geo?.city || "unknown",
         page,
