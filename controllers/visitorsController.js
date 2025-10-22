@@ -6,7 +6,7 @@ const { Visitors } = db;
 
 exports.trackVisit = async (req, res) => {
   try {
-    const data = JSON.parse(req.body);
+    const data = req.body;
     const { visitor_id, page } = data;
     const ip =
       req.headers["x-forwarded-for"]?.split(",")[0] || req.socket.remoteAddress;
@@ -36,6 +36,7 @@ exports.trackVisit = async (req, res) => {
 
     res.status(200).end();
   } catch (error) {
+    console.log(error);
     res.status(500).json({ error: "Tracking failed" });
   }
 };
