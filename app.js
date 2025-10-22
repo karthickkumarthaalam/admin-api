@@ -77,6 +77,7 @@ app.use("/api/agreement-category", require("./routes/agreementCategoryRoutes"));
 app.use("/api/payslip-category", require("./routes/payslipComponentRoutes"));
 app.use("/api/payslip", require("./routes/payslipRoutes"));
 app.use("/api/festival-gif", require("./routes/festivalGifRoutes"));
+app.use("/api/track-visit", require("./routes/visitorsRoutes"));
 
 const io = new Server(server, {
   cors: {

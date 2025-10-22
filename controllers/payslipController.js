@@ -18,6 +18,7 @@ exports.createPayslip = async (req, res) => {
       currency_id,
       month,
       items,
+      payment_mode,
       paid_date,
       paid_days,
       lop_days,
@@ -45,6 +46,7 @@ exports.createPayslip = async (req, res) => {
       user_id,
       currency_id,
       month,
+      payment_mode,
       paid_date,
       paid_days,
       lop_days,
@@ -226,6 +228,7 @@ exports.updatePayslip = async (req, res) => {
       month,
       currency_id,
       items,
+      payment_mode,
       paid_date,
       paid_days,
       lop_days,
@@ -244,6 +247,7 @@ exports.updatePayslip = async (req, res) => {
 
     // Update main payslip fields
     payslip.month = month ?? payslip.month;
+    payslip.payment_mode = payment_mode ?? payslip.payment_mode;
     payslip.paid_date = paid_date ?? payslip.paid_date;
     payslip.currency_id = currency_id ?? payslip.currency_id;
     payslip.paid_days = paid_days ?? payslip.paid_days;

@@ -77,6 +77,7 @@ db.PayslipComponent = require("./payslipComponent")(sequelize, Sequelize);
 db.Payslip = require("./payslip")(sequelize, Sequelize);
 db.PayslipItem = require("./payslipItem")(sequelize, Sequelize);
 db.FestivalGif = require("./festivalGif")(sequelize, Sequelize);
+db.Visitors = require("./visitors")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {

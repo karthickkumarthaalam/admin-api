@@ -36,6 +36,10 @@ module.exports = (sequelize, DataTypes) => {
         default: DataTypes.NOW,
         allowNull: true,
       },
+      payment_mode: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       paid_days: {
         type: DataTypes.INTEGER,
         allowNull: false,
