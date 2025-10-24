@@ -1,3 +1,5 @@
+const path = require("path");
+const fs = require("fs");
 const { Op } = require("sequelize");
 const db = require("../models");
 const pagination = require("../utils/pagination");
@@ -9,6 +11,7 @@ const {
   Currency,
   Department,
 } = db;
+const { sendEmail } = require("../utils/sendEmail");
 
 // CREATE Payslip
 exports.createPayslip = async (req, res) => {
@@ -428,5 +431,88 @@ exports.verifyData = async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: "Error showing verify" });
+  }
+};
+
+exports.sendPayslipEmail = async (req, res) => {
+  try {
+    const { email, filename } = req.body;
+    const file = req.file;
+
+    if (!email || !file) {
+      return res.status(400).json({
+        status: "error",
+        message: "Email and payslip file are required",
+      });
+    }
+
+    const attachments = [
+      {
+        filename: filename || file.originalname,
+        path: path.resolve(file.path),
+      },
+      {
+        filename: "thaalam-logo.png",
+        path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+        cid: "logoimage",
+      },
+    ];
+
+    const htmlContent = `
+<div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #333;">
+  <div style="text-align: center; padding: 20px; background-color: #f8f9fa; border-bottom: 2px solid #d63384;">
+    <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 160px;" />
+    <h1 style="color: #d63384; margin: 10px 0;">Your Payslip</h1>
+  </div>
+
+  <div style="padding: 20px;">
+    <p>Dear Employee,</p>
+    <p>We are pleased to share your payslip for the current period. Please find the details below and the full payslip attached for your records.</p>
+
+    <table style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+      <tr style="background-color: #f1f1f1;">
+        <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">File Name</td>
+        <td style="padding: 10px; border: 1px solid #ddd;">${
+          filename || file.originalname
+        }</td>
+      </tr>
+      <tr>
+        <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">Date Issued</td>
+        <td style="padding: 10px; border: 1px solid #ddd;">${new Date().toLocaleDateString()}</td>
+      </tr>
+    </table>
+
+    <p style="margin-top: 20px;">Please review the payslip and reach out to the HR department if you have any questions.</p>
+
+    <p style="margin-top: 30px;">Thank you for your hard work and dedication!</p>
+
+    <p style="margin-top: 20px; font-weight: bold;">Best regards,<br/>Thaalam Media Team</p>
+  </div>
+
+  <div style="text-align: center; padding: 15px; background-color: #f8f9fa; border-top: 2px solid #d63384; font-size: 12px; color: #555;">
+    © ${new Date().getFullYear()} Thaalam Media. All rights reserved.
+  </div>
+</div>
+`;
+
+    await sendEmail({
+      toEmail: email,
+      subject: "Your Payslip - Thaalam Media",
+      htmlContent,
+      attachments,
+    });
+
+    res.json({ status: "success", message: "Payslip received" });
+
+    fs.unlink(file.path, (err) => {
+      if (err) console.error("Failed to delete file:", err);
+    });
+  } catch (error) {
+    console.log(error, "showing error");
+    res.status(500).json({
+      status: "error",
+      message: "Failed to send Email",
+      error: error.message,
+    });
   }
 };
