@@ -19,6 +19,11 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         defaultValue: "unknown",
       },
+      region: {
+        type: DataTypes.STRING,
+        defaultValue: "unknown",
+        allowNull: true,
+      },
       city: {
         type: DataTypes.STRING,
         defaultValue: "unknown",
@@ -32,7 +37,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "visitors",
       timestamps: true,
       updatedAt: false,
-      createdAt: "created_at", // <-- match your migration column
+      createdAt: "created_at",
     }
   );
 

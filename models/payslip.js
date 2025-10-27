@@ -1,5 +1,3 @@
-const currency = require("./currency");
-
 module.exports = (sequelize, DataTypes) => {
   const PaySlip = sequelize.define(
     "PaySlip",

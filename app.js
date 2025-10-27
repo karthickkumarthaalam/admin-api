@@ -78,6 +78,12 @@ app.use("/api/payslip-category", require("./routes/payslipComponentRoutes"));
 app.use("/api/payslip", require("./routes/payslipRoutes"));
 app.use("/api/festival-gif", require("./routes/festivalGifRoutes"));
 app.use("/api/visit", require("./routes/visitorsRoutes"));
+app.use(
+  "/api/previous-employment",
+  require("./routes/previousEmploymentRoutes")
+);
+app.use("/api/employee-documents", require("./routes/employeeDocumentsRoutes"));
+app.use("/api/experience-letter", require("./routes/experienceLetterRoutes"));
 
 const io = new Server(server, {
   cors: {

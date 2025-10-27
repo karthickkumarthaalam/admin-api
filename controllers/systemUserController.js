@@ -21,6 +21,7 @@ exports.createSystemUser = async (req, res) => {
       employee_id,
       gender,
       date_of_birth,
+      date_of_joining,
       phone_number,
       whatsapp_number,
       address,
@@ -80,6 +81,8 @@ exports.createSystemUser = async (req, res) => {
       user_id: user.id,
       is_admin,
       show_profile,
+      share_access,
+      date_of_joining,
       bank_name: bank_name || null,
       ifsc_code: ifsc_code || null,
       account_number: account_number || null,
@@ -130,9 +133,13 @@ exports.updateSystemUser = async (req, res) => {
         return res.status(400).json({ message: "Employee Id already taken" });
       }
     }
+    // console.log(systemUser, "showing system User");
 
     // Share access -> send new password
-    if (String(share_access).toLowerCase() === "true") {
+    const newShareAccess = share_access === true || share_access === "true";
+
+    if (!systemUser.share_access && newShareAccess) {
+      // Only send email if it was previously false and now being set to true
       const plainPassword = crypto.randomBytes(6).toString("hex");
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
       userRecord.password = hashedPassword;
@@ -164,6 +171,8 @@ exports.updateSystemUser = async (req, res) => {
       ...restBody,
       name: name,
       email: email,
+      share_access,
+      is_admin,
       image_url: imageUrl,
       employee_id: employee_id,
     });
@@ -172,6 +181,7 @@ exports.updateSystemUser = async (req, res) => {
       .status(200)
       .json({ message: "User updated successfully", data: systemUser });
   } catch (error) {
+    console.log(error, "showing error");
     res
       .status(500)
       .json({ message: "Failed to update user", error: error.message });
@@ -209,7 +219,6 @@ exports.deleteSystemUser = async (req, res) => {
       fs.unlinkSync(user.image_url);
     }
 
-    await User.destroy({ where: { id: user.user_id } });
     await user.destroy();
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {

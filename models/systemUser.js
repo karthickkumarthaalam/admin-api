@@ -86,6 +86,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      date_of_joining: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
       bank_name: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -105,6 +109,10 @@ module.exports = (sequelize, DataTypes) => {
       uan_number: {
         type: DataTypes.STRING,
         allowNull: true,
+      },
+      share_access: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
       },
     },
     {
@@ -131,6 +139,14 @@ module.exports = (sequelize, DataTypes) => {
     SystemUsers.hasMany(models.Payslip, {
       foreignKey: "user_id",
       as: "payslips",
+    });
+    SystemUsers.hasMany(models.EmployeeDocuments, {
+      foreignKey: "system_user_id",
+      as: "documents",
+    });
+    SystemUsers.hasMany(models.PreviousEmployment, {
+      foreignKey: "system_user_id",
+      as: "previous_employments",
     });
   };
 

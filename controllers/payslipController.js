@@ -109,11 +109,11 @@ exports.getAllPayslips = async (req, res) => {
     const searchCondition = search
       ? {
           [Op.or]: [
-            { "$user.name$": { [Op.iLike]: `%${search}%` } },
-            { "$user.email$": { [Op.iLike]: `%${search}%` } },
+            { "$user.name$": { [Op.like]: `%${search}%` } },
+            { "$user.email$": { [Op.like]: `%${search}%` } },
             {
               "$user.department.department_name$": {
-                [Op.iLike]: `%${search}%`,
+                [Op.like]: `%${search}%`,
               },
             },
           ],
@@ -508,7 +508,6 @@ exports.sendPayslipEmail = async (req, res) => {
       if (err) console.error("Failed to delete file:", err);
     });
   } catch (error) {
-    console.log(error, "showing error");
     res.status(500).json({
       status: "error",
       message: "Failed to send Email",
