@@ -9,7 +9,7 @@ module.exports = {
      * Example:
      * await queryInterface.createTable('users', { id: Sequelize.INTEGER });
      */
-    await queryInterface.changeColumn("advertisements", "status", {
+    await queryInterface.changeColumn("Advertisements", "status", {
       type: Sequelize.ENUM("pending", "intimated", "in-progress", "closed"),
       defaultValue: "pending",
       allowNull: false,
@@ -23,7 +23,7 @@ module.exports = {
      * Example:
      * await queryInterface.dropTable('users');
      */
-    await queryInterface.changeColumn("advertisements", "status", {
+    await queryInterface.changeColumn("Advertisements", "status", {
       type: Sequelize.ENUM("pending", "resolved", "closed"),
       defaultValue: "pending",
       allowNull: false,
