@@ -82,6 +82,19 @@ db.EmployeeDocuments = require("./employeeDocument")(sequelize, Sequelize);
 db.PreviousEmployment = require("./previousEmployment")(sequelize, Sequelize);
 db.Experience = require("./experience")(sequelize, Sequelize);
 
+// News tables
+db.News = require("./news")(sequelize, Sequelize);
+db.NewsCategory = require("./newsCategory")(sequelize, Sequelize);
+db.NewsMedia = require("./newsMedia")(sequelize, Sequelize);
+db.NewsReaction = require("./newsReaction")(sequelize, Sequelize);
+db.NewsComments = require("./newsComment")(sequelize, Sequelize);
+
+//Event tables
+db.Event = require("./event")(sequelize, Sequelize);
+db.EventBanner = require("./eventBanner")(sequelize, Sequelize);
+db.EventCrewMember = require("./eventCrewMembers")(sequelize, Sequelize);
+db.EventAmenity = require("./eventAmenity")(sequelize, Sequelize);
+
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);

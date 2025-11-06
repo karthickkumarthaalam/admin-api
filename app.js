@@ -85,6 +85,19 @@ app.use(
 app.use("/api/employee-documents", require("./routes/employeeDocumentsRoutes"));
 app.use("/api/experience-letter", require("./routes/experienceLetterRoutes"));
 
+// News Router
+app.use("/api/news-category", require("./routes/newsCategoryRoutes"));
+app.use("/api/news", require("./routes/newsRoutes"));
+app.use("/api/news-media", require("./routes/newsMediaRoutes"));
+app.use("/api/news-reactions", require("./routes/newsReactionRoutes"));
+app.use("/api/news-comments", require("./routes/newsCommentsRoutes"));
+
+//Event Router
+app.use("/api/event", require("./routes/eventRoutes"));
+app.use("/api/event-banner", require("./routes/eventBannerRoutes"));
+app.use("/api/event-amenity", require("./routes/eventAmenityRoutes"));
+app.use("/api/event-crew", require("./routes/eventCrewMemberRoutes"));
+
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {

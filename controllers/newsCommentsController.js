@@ -1,0 +1,208 @@
+const db = require("../models");
+const pagination = require("../utils/pagination");
+const { NewsComments, News, Members, SystemUsers } = db;
+
+exports.addComments = async (req, res) => {
+  try {
+    const { news_id, member_id, guest_id, guest_name, guest_email, comment } =
+      req.body;
+
+    if (!news_id || !comment) {
+      return res.status(400).json({
+        status: "error",
+        message: "Need comment details",
+      });
+    }
+
+    let member = null;
+
+    if (member_id) {
+      member = await Members.findOne({
+        where: {
+          member_id: member_id,
+        },
+      });
+
+      if (!member) {
+        return res.status(404).json({
+          status: "error",
+          message: "Member not found",
+        });
+      }
+    }
+
+    if (!member_id && !guest_id) {
+      return res.status(400).json({
+        status: "error",
+        message: "Either member_id or guest_id is required",
+      });
+    }
+
+    if (!member_id && guest_id && !guest_name) {
+      return res.status(400).json({
+        status: "error",
+        message: "Guest name and email are required",
+      });
+    }
+
+    const newsComment = await NewsComments.create({
+      news_id,
+      member_id: member ? member.id : null,
+      guest_id: guest_id || null,
+      guest_name: guest_name || null,
+      guest_email: guest_email || null,
+      comment,
+      status: "pending",
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Comment posted successfully and is pending approval",
+      newsComment,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to add comment",
+      error: error.message,
+    });
+  }
+};
+
+exports.commentList = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 50;
+    const { role, id } = req.user;
+
+    if (role !== "admin") {
+      const systemUser = await SystemUsers.findOne({ where: { user_id: id } });
+      if (systemUser) {
+        where["$News.created_by_name$"] = systemUser.name;
+      }
+    }
+
+    const where = {};
+
+    if (req.query.status) {
+      where.status = req.query.status;
+    }
+
+    const result = await pagination(NewsComments, {
+      page,
+      limit,
+      where,
+      include: [
+        { model: Members, attributes: ["id", "name"] },
+        { model: News, attributes: ["id", "title"] },
+      ],
+      order: [["created_at", "DESC"]],
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "News comments fetched successfully",
+      data: result.data,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to list comments",
+      error: error.message,
+    });
+  }
+};
+
+exports.updateCommentStatus = async (req, res) => {
+  try {
+    const { comment_id } = req.params;
+    const { status } = req.body;
+
+    if (!["approved", "rejected", "pending"].includes(status)) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Invalid status" });
+    }
+
+    const newsComment = await NewsComments.findByPk(comment_id);
+    if (!newsComment) {
+      return res
+        .status(404)
+        .json({ status: "error", message: "News comment not found" });
+    }
+
+    newsComment.status = status;
+    await newsComment.save();
+
+    return res.status(200).json({
+      status: "success",
+      message: "News comment status updated successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to update status",
+      error: error.message,
+    });
+  }
+};
+
+exports.deleteComment = async (req, res) => {
+  try {
+    const { comment_id } = req.params;
+
+    const comment = await NewsComments.findByPk(comment_id);
+    if (!comment)
+      return res
+        .status(404)
+        .json({ status: "error", message: "Comment not found" });
+
+    await comment.destroy();
+
+    return res.status(200).json({
+      status: "success",
+      message: "Comment deleted successfully",
+    });
+  } catch (error) {
+    console.error("❌ Error deleting comment:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to delete comment",
+      error: error.message,
+    });
+  }
+};
+
+exports.getCommentByNews = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 1000;
+
+    const where = {
+      news_id: req.params.id,
+      status: "approved",
+    };
+
+    const result = await pagination(NewsComments, {
+      page,
+      limit,
+      where,
+      include: [{ model: Members, attributes: ["id", "name"] }],
+      order: [["created_at", "DESC"]],
+    });
+
+    res.status(200).json({
+      status: "success",
+      message: "Comments fetched successfully",
+      result,
+    });
+  } catch (error) {
+    console.error("❌ Error fetching comments:", error);
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch comments",
+      error: error.message,
+    });
+  }
+};
