@@ -2,6 +2,7 @@ const { Op } = require("sequelize");
 const db = require("../models");
 const pagination = require("../utils/pagination");
 const { Advertisement } = db;
+const sendNotification = require("../services/sendNotification");
 
 exports.createAdvertisement = async (req, res) => {
   try {
@@ -28,6 +29,13 @@ exports.createAdvertisement = async (req, res) => {
       site_address,
       requirement,
       status: "pending",
+    });
+
+    await sendNotification(req.app, {
+      title: "New Advertisement Enquiry",
+      message: `${contact_person} from ${company_name} has submitted an advertisement query.`,
+      type: "advertisement",
+      created_by: contact_person,
     });
 
     res.status(201).json({

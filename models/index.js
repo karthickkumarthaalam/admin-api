@@ -95,6 +95,9 @@ db.EventBanner = require("./eventBanner")(sequelize, Sequelize);
 db.EventCrewMember = require("./eventCrewMembers")(sequelize, Sequelize);
 db.EventAmenity = require("./eventAmenity")(sequelize, Sequelize);
 
+//Notification
+db.Notification = require("./notification")(sequelize, Sequelize);
+
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);

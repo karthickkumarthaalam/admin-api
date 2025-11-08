@@ -27,7 +27,7 @@ exports.createEvent = async (req, res) => {
     } = req.body;
 
     const user = req.user;
-    if (!title || !description || !venue || !start_date) {
+    if (!title || !venue || !start_date) {
       return res.status(400).json({
         status: "error",
         message: "Title, description, venue and start_date are required.",
@@ -84,16 +84,19 @@ exports.getAllEvents = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 20;
-
-    const { role, id } = req?.user;
+    const { role, id } = req.user || {};
 
     const where = {};
 
     if (req.query.search) {
-      const search = req.query.search;
+      const search = req.query.search.trim();
       where[Op.or] = [
         { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
         { venue: { [Op.like]: `%${search}%` } },
+        { city: { [Op.like]: `%${search}%` } },
+        { state: { [Op.like]: `%${search}%` } },
+        { country: { [Op.like]: `%${search}%` } },
       ];
     }
 
@@ -101,10 +104,15 @@ exports.getAllEvents = async (req, res) => {
       where.created_by = id;
     }
 
+    if (req.query.status && req.query.status !== "all") {
+      where.status = req.query.status;
+    }
+
     const result = await pagination(Event, {
       page,
       limit,
       where,
+      order: [["start_date", "DESC"]],
       include: [
         {
           model: SystemUsers,
@@ -114,14 +122,15 @@ exports.getAllEvents = async (req, res) => {
       ],
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
-      message: "Event fetched successfully",
+      message: "Events fetched successfully",
       data: result.data,
       pagination: result.pagination,
     });
   } catch (error) {
-    res.status(500).json({
+    console.error("Error fetching events:", error);
+    return res.status(500).json({
       status: "error",
       message: "Failed to fetch events.",
       error: error.message,

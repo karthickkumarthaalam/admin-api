@@ -3,6 +3,7 @@ const { Op } = require("sequelize");
 const { Enquiry } = db;
 const pagination = require("../utils/pagination");
 const { sendEnquiryEmail } = require("../utils/sendEmail");
+const sendNotification = require("../services/sendNotification");
 
 exports.createEnquiry = async (req, res) => {
   try {
@@ -25,6 +26,13 @@ exports.createEnquiry = async (req, res) => {
     });
 
     await sendEnquiryEmail(email, name, subject, message);
+
+    await sendNotification(req.app, {
+      title: "New Enquiry Received",
+      message: `${name} submitted an enquiry regarding "${subject}".`,
+      type: "enquiry",
+      created_by: name,
+    });
 
     return res.status(201).json({
       status: "success",

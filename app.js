@@ -98,6 +98,9 @@ app.use("/api/event-banner", require("./routes/eventBannerRoutes"));
 app.use("/api/event-amenity", require("./routes/eventAmenityRoutes"));
 app.use("/api/event-crew", require("./routes/eventCrewMemberRoutes"));
 
+//notification
+app.use("/api/notifications", require("./routes/notificationRoutes"));
+
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
@@ -107,6 +110,9 @@ const io = new Server(server, {
     methods: ["GET", "POST", "PATCH"],
   },
 });
+
+app.set("io", io);
+
 const pubClient = createClient({ url: "redis://localhost:6379" });
 const subClient = pubClient.duplicate();
 

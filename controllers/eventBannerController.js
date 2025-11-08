@@ -9,7 +9,7 @@ const {
 
 exports.addBanner = async (req, res) => {
   try {
-    const { event_id, type, order_index } = req.body;
+    const { event_id, type, order_index, status } = req.body;
 
     if (!event_id) {
       return res.status(400).json({
@@ -49,6 +49,7 @@ exports.addBanner = async (req, res) => {
       url: fileUrl,
       type: type || "image",
       order_index: order_index || 0,
+      status: status || "inactive",
     });
 
     res.status(200).json({
@@ -69,7 +70,7 @@ exports.addBanner = async (req, res) => {
 exports.updateBanner = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type, order_index } = req.body;
+    const { type, order_index, status } = req.body;
 
     const banner = await EventBanner.findByPk(id);
     if (!banner) {
@@ -117,6 +118,7 @@ exports.updateBanner = async (req, res) => {
       url: updatedUrl,
       type: type || banner.type,
       order_index: order_index ?? banner.order_index,
+      status: status,
     });
 
     res.status(200).json({
@@ -129,6 +131,42 @@ exports.updateBanner = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Failed to update banner.",
+      error: error.message,
+    });
+  }
+};
+
+exports.updateBannerStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    const eventBanner = await EventBanner.findByPk(id);
+
+    if (!eventBanner) {
+      return res.status(404).json({
+        status: "error",
+        message: "Event banner not found",
+      });
+    }
+
+    if (!["active", "inactive"].includes(status)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid status value",
+      });
+    }
+
+    await eventBanner.update({ status });
+
+    res.status(200).json({
+      status: "success",
+      message: `Banner status updated to ${status}`,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to update banner status",
       error: error.message,
     });
   }

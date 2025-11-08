@@ -1,6 +1,7 @@
 const db = require("../models");
 const pagination = require("../utils/pagination");
 const { PodcastComment, Podcast, Members, SystemUsers } = db;
+const sendNotification = require("../services/sendNotification");
 
 exports.addComment = async (req, res) => {
   try {
@@ -53,6 +54,26 @@ exports.addComment = async (req, res) => {
       comment,
       status: "pending",
     });
+
+    try {
+      const podcast = await Podcast.findByPk(podcast_id, {
+        attributes: ["title"],
+      });
+
+      const commenterName = member ? member.name : guest_name || "Guest User";
+
+      await sendNotification(req.app, {
+        title: "New Podcast Comment",
+        message: `${commenterName} commented on podcast "${
+          podcast?.title || "Untitled"
+        }"`,
+        type: "comment",
+        created_by: commenterName,
+      });
+    } catch (notifyErr) {
+      console.error("Notification emit failed:", notifyErr.message);
+    }
+
     return res.status(200).json({
       status: "success",
       message: "Comment posted successfully and is pending approval",

@@ -30,6 +30,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: 0,
       },
+      status: {
+        type: DataTypes.ENUM("active", "inactive"),
+        defaultValue: "inactive",
+      },
     },
     {
       tableName: "event_banners",

@@ -24,6 +24,12 @@ router.put(
   eventBannerController.updateBanner
 );
 
+router.patch(
+  "/status/:id",
+  authenticateToken,
+  eventBannerController.updateBannerStatus
+);
+
 router.get(
   "/event/:event_id",
   authenticateToken,
