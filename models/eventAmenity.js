@@ -24,6 +24,15 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      image: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      status: {
+        type: DataTypes.ENUM("inactive", "active"),
+        allowNull: false,
+        defaultValue: "inactive",
+      },
     },
     {
       tableName: "event_amenities",

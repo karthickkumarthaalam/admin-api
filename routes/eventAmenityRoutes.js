@@ -2,16 +2,29 @@ const express = require("express");
 const router = express.Router();
 const eventAmenityController = require("../controllers/eventAmenityController");
 const { authenticateToken } = require("../middlewares/authMiddleware");
+const uploadImage = require("../middlewares/uploadImages");
 
-router.post("/", authenticateToken, eventAmenityController.addAmenity);
+router.use(authenticateToken);
 
-router.put("/:id", authenticateToken, eventAmenityController.updateAmenity);
-
-router.get(
-  "/event/:event_id",
-  authenticateToken,
-  eventAmenityController.listAmenitiesByEventId
+router.post(
+  "/",
+  uploadImage("uploads/events", {
+    mode: "fields",
+    fieldsConfig: [{ name: "amenity_image", maxCount: 1 }],
+  }),
+  eventAmenityController.addAmenity
 );
-router.delete("/:id", authenticateToken, eventAmenityController.deleteAmenity);
+router.put(
+  "/:id",
+  uploadImage("uploads/events", {
+    mode: "fields",
+    fieldsConfig: [{ name: "amenity_image", maxCount: 1 }],
+  }),
+  eventAmenityController.updateAmenity
+);
+
+router.patch("/status/:id", eventAmenityController.updateStatus);
+router.get("/event/:event_id", eventAmenityController.listAmenitiesByEventId);
+router.delete("/:id", eventAmenityController.deleteAmenity);
 
 module.exports = router;

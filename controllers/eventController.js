@@ -8,7 +8,7 @@ const {
   uploadToCpanel,
   deleteFromCpanel,
 } = require("../services/uploadToCpanel");
-const { Op } = require("sequelize");
+const { Op, where } = require("sequelize");
 
 exports.createEvent = async (req, res) => {
   try {
@@ -134,6 +134,51 @@ exports.getAllEvents = async (req, res) => {
       status: "error",
       message: "Failed to fetch events.",
       error: error.message,
+    });
+  }
+};
+
+exports.getAllEventForUsers = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+
+    const whereConditions = {};
+
+    if (req.query.search) {
+      const search = req.query.search;
+      whereConditions[Op.or] = [
+        { title: { [Op.like]: `%${search}%` } },
+        { description: { [Op.like]: `%${search}%` } },
+        { venue: { [Op.like]: `%${search}%` } },
+        { city: { [Op.like]: `%${search}%` } },
+        { state: { [Op.like]: `%${search}%` } },
+        { country: { [Op.like]: `%${search}%` } },
+      ];
+    }
+
+    if (req.query.status && req.query.status !== "all") {
+      whereConditions.status = req.query.status;
+    }
+
+    const result = await pagination(Event, {
+      page,
+      limit,
+      where: whereConditions,
+      order: [["start_date", "DESC"]],
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Events fetched successfully",
+      data: result.data,
+      pagination: result.pagination,
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      error: error.message,
+      message: "Failed to fetch events",
     });
   }
 };

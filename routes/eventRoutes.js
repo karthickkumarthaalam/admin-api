@@ -4,9 +4,12 @@ const eventController = require("../controllers/eventController");
 const uploadImage = require("../middlewares/uploadImages");
 const { authenticateToken } = require("../middlewares/authMiddleware");
 
+router.get("/all-events", eventController.getAllEventForUsers);
+
+router.use(authenticateToken);
+
 router.post(
   "/",
-  authenticateToken,
   uploadImage("uploads/events", {
     mode: "fields",
     fieldsConfig: [{ name: "logo", maxCount: 1 }],
@@ -14,13 +17,12 @@ router.post(
   eventController.createEvent
 );
 
-router.get("/", authenticateToken, eventController.getAllEvents);
+router.get("/", eventController.getAllEvents);
 
-router.get("/:id", authenticateToken, eventController.getEventById);
+router.get("/:id", eventController.getEventById);
 
 router.put(
   "/:id",
-  authenticateToken,
   uploadImage("uploads/events", {
     mode: "fields",
     fieldsConfig: [{ name: "logo", maxCount: 1 }],
@@ -28,6 +30,6 @@ router.put(
   eventController.updateEvent
 );
 
-router.delete("/:id", authenticateToken, eventController.deleteEvent);
+router.delete("/:id", eventController.deleteEvent);
 
 module.exports = router;

@@ -8,196 +8,245 @@ const {
 const { Op, Sequelize } = require("sequelize");
 const bcrypt = require("bcrypt");
 const crypto = require("crypto");
-const pagination = require("../utils/pagination");
 const fs = require("fs");
 const { sendRjPasswordEmail } = require("../utils/sendEmail");
+const pagination = require("../utils/pagination");
 
-// Create System User
+/* -----------------------------------------------------------
+   🟢 CREATE SYSTEM USER (with transaction)
+----------------------------------------------------------- */
 exports.createSystemUser = async (req, res) => {
-  try {
-    const {
-      name,
-      email,
-      employee_id,
-      gender,
-      date_of_birth,
-      date_of_joining,
-      phone_number,
-      whatsapp_number,
-      address,
-      country,
-      state,
-      city,
-      description,
-      department_id,
-      share_access,
-      is_admin,
-      show_profile,
-      bank_name,
-      ifsc_code,
-      account_number,
-      pan_number,
-      uan_number,
-    } = req.body;
+  const transaction = await SystemUsers.sequelize.transaction();
 
-    const existingUser = await SystemUsers.findOne({
-      where: { email, employee_id },
-    });
-    if (existingUser) {
-      return res.status(400).json({
-        message: "User with this email or employee ID already exists",
-      });
+  try {
+    const body = req.body;
+
+    // ✅ Required validation
+    if (!body.name || !body.email) {
+      await transaction.rollback();
+      return res
+        .status(400)
+        .json({ message: "Name and Email are required fields" });
     }
 
+    // ✅ Sanitize dates (handle "Invalid date" or empty)
+    const safeDate = (val) => {
+      if (!val || val === "Invalid date" || isNaN(new Date(val))) return null;
+      return new Date(val);
+    };
+
+    const dateOfBirth = safeDate(body.date_of_birth);
+    const dateOfJoining = safeDate(body.date_of_joining);
+
+    // ✅ Duplicate email check
+    const existingEmail = await SystemUsers.findOne({
+      where: { email: body.email },
+    });
+    if (existingEmail) {
+      await transaction.rollback();
+      return res.status(400).json({ message: "Email already exists" });
+    }
+
+    // ✅ Create linked User
     const plainPassword = crypto.randomBytes(6).toString("hex");
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
+    const user = await User.create(
+      {
+        email: body.email,
+        password: hashedPassword,
+        role:
+          body.is_admin === "true" || body.is_admin === true ? "admin" : "user",
+      },
+      { transaction }
+    );
 
-    const user = await User.create({
-      email,
-      password: hashedPassword,
-      role: is_admin === true || is_admin === "true" ? "admin" : "user",
-    });
+    // ✅ Handle image upload (local)
+    const imageUrl = req.files?.profile_image?.[0]?.path || null;
 
-    const imageUrl = req.files["profile_image"]
-      ? req.files["profile_image"][0].path
-      : null;
+    // ✅ Create SystemUser safely
+    const systemUser = await SystemUsers.create(
+      {
+        ...body,
+        date_of_birth: dateOfBirth,
+        date_of_joining: dateOfJoining,
+        status: "inactive",
+        image_url: imageUrl,
+        user_id: user.id,
+        share_access:
+          body.share_access === "true" || body.share_access === true,
+        is_admin: body.is_admin === "true" || body.is_admin === true,
+        show_profile:
+          body.show_profile === "true" || body.show_profile === true,
+      },
+      { transaction }
+    );
 
-    const systemUser = await SystemUsers.create({
-      name,
-      email,
-      employee_id,
-      gender,
-      date_of_birth,
-      phone_number,
-      whatsapp_number,
-      address,
-      country,
-      state,
-      city,
-      description,
-      department_id,
-      status: "inactive",
-      image_url: imageUrl,
-      user_id: user.id,
-      is_admin,
-      show_profile,
-      share_access,
-      date_of_joining,
-      bank_name: bank_name || null,
-      ifsc_code: ifsc_code || null,
-      account_number: account_number || null,
-      pan_number: pan_number || null,
-      uan_number: uan_number || null,
-    });
+    await transaction.commit();
 
-    if (share_access === true || share_access === "true") {
-      await sendRjPasswordEmail(email, name, plainPassword);
+    if (systemUser.share_access) {
+      try {
+        await sendRjPasswordEmail(body.email, body.name, plainPassword);
+      } catch (err) {
+        console.warn("⚠️ Email send failed:", err.message);
+      }
     }
-    res
-      .status(201)
-      .json({ message: "System user created successfully", data: systemUser });
+
+    res.status(201).json({
+      message: "System user created successfully",
+      data: systemUser,
+    });
   } catch (error) {
-    res
-      .status(500)
-      .json({ message: "Failed to create system user", error: error.message });
+    await transaction.rollback();
+    console.error("❌ Error creating system user:", error);
+    res.status(500).json({
+      message: "Failed to create system user",
+      error: error.message,
+    });
   }
 };
 
-// Update System User
+/* -----------------------------------------------------------
+   🟡 UPDATE SYSTEM USER (with transaction)
+----------------------------------------------------------- */
 exports.updateSystemUser = async (req, res) => {
+  const transaction = await SystemUsers.sequelize.transaction();
+
   try {
     const { id } = req.params;
-    const systemUser = await SystemUsers.findByPk(id, { include: "users" });
+    const {
+      email,
+      name,
+      remove_image,
+      employee_id,
+      share_access,
+      is_admin,
+      ...restBody
+    } = req.body;
+
+    const systemUser = await SystemUsers.findByPk(id, {
+      include: { model: User, as: "users" },
+      transaction,
+    });
     if (!systemUser) return res.status(404).json({ message: "User not found" });
 
     const userRecord = systemUser.users;
 
-    const { email, name, employee_id, share_access, is_admin, ...restBody } =
-      req.body;
+    // ✅ Sanitize dates before update
+    const safeDate = (val) => {
+      if (!val || val === "Invalid date" || isNaN(new Date(val))) return null;
+      return new Date(val);
+    };
 
-    // Email change & duplication check
+    const dateOfBirth = safeDate(restBody.date_of_birth);
+    const dateOfJoining = safeDate(restBody.date_of_joining);
+
+    // ✅ Email check
     if (email && email !== userRecord.email) {
-      const emailTaken = await User.findOne({ where: { email } });
-      if (emailTaken) {
+      const emailExists = await User.findOne({ where: { email } });
+      if (emailExists) {
         return res
           .status(400)
           .json({ message: "Another user with this email already exists" });
       }
+
       userRecord.email = email;
     }
+
+    // ✅ Employee ID check
     if (employee_id && employee_id !== systemUser.employee_id) {
       const employeeIdTaken = await SystemUsers.findOne({
         where: { employee_id },
       });
-      if (employeeIdTaken) {
-        return res.status(400).json({ message: "Employee Id already taken" });
-      }
+      if (employeeIdTaken)
+        return res.status(400).json({ message: "Employee ID already taken" });
     }
-    // console.log(systemUser, "showing system User");
 
-    // Share access -> send new password
-    const newShareAccess = share_access === true || share_access === "true";
-
+    // ✅ Share access update logic
+    const newShareAccess = share_access === "true" || share_access === true;
     if (!systemUser.share_access && newShareAccess) {
-      // Only send email if it was previously false and now being set to true
       const plainPassword = crypto.randomBytes(6).toString("hex");
       const hashedPassword = await bcrypt.hash(plainPassword, 10);
       userRecord.password = hashedPassword;
-      await sendRjPasswordEmail(
-        userRecord.email,
-        name || systemUser.name,
-        plainPassword
-      );
+      try {
+        await sendRjPasswordEmail(
+          email || userRecord.email,
+          name || systemUser.name,
+          plainPassword
+        );
+      } catch (err) {
+        console.warn("⚠️ Email sending failed:", err.message);
+      }
     }
 
-    // is_admin -> update role
+    // ✅ Update admin role
     if (is_admin !== undefined) {
       userRecord.role =
         is_admin === true || is_admin === "true" ? "admin" : "user";
     }
+    await userRecord.save({ transaction });
 
-    await userRecord.save(); // single update
-
-    // Image update
+    // ✅ Handle Image
     let imageUrl = systemUser.image_url;
-    if (req.files["profile_image"]) {
+    const file = req.files?.profile_image?.[0];
+
+    if (remove_image === "true" || remove_image === true) {
       if (imageUrl && fs.existsSync(imageUrl)) {
         fs.unlinkSync(imageUrl);
       }
-      imageUrl = req.files["profile_image"][0].path;
+      imageUrl = null;
     }
 
-    await systemUser.update({
-      ...restBody,
-      name: name,
-      email: email,
-      share_access,
-      is_admin,
-      image_url: imageUrl,
-      employee_id: employee_id,
-    });
+    if (file) {
+      if (imageUrl && fs.existsSync(imageUrl)) fs.unlinkSync(imageUrl);
+      imageUrl = file.path;
+    }
 
-    res
-      .status(200)
-      .json({ message: "User updated successfully", data: systemUser });
+    await systemUser.update(
+      {
+        ...restBody,
+        name,
+        email,
+        employee_id,
+        date_of_birth: dateOfBirth,
+        date_of_joining: dateOfJoining,
+        share_access: newShareAccess,
+        is_admin: is_admin === true || is_admin === "true",
+        image_url: imageUrl,
+      },
+      { transaction }
+    );
+
+    await transaction.commit();
+    res.status(200).json({
+      message: "User updated successfully",
+      data: systemUser,
+    });
   } catch (error) {
-    console.log(error, "showing error");
-    res
-      .status(500)
-      .json({ message: "Failed to update user", error: error.message });
+    await transaction.rollback();
+    console.error("❌ Update error:", error);
+    res.status(500).json({
+      message: "Failed to update user",
+      error: error.message,
+    });
   }
 };
 
-// Update Status
+/* -----------------------------------------------------------
+   🔵 UPDATE STATUS
+----------------------------------------------------------- */
 exports.updateSystemUserStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body;
+
+    if (!["active", "inactive"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status value" });
+    }
+
     const user = await SystemUsers.findByPk(id);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     await user.update({ status });
-
     res
       .status(200)
       .json({ message: "Status updated successfully", data: user });
@@ -208,27 +257,47 @@ exports.updateSystemUserStatus = async (req, res) => {
   }
 };
 
-// Delete User
+/* -----------------------------------------------------------
+   🔴 DELETE USER (with rollback safety)
+----------------------------------------------------------- */
 exports.deleteSystemUser = async (req, res) => {
+  const transaction = await SystemUsers.sequelize.transaction();
   try {
     const { id } = req.params;
-    const user = await SystemUsers.findByPk(id);
-    if (!user) return res.status(404).json({ message: "User not found" });
 
+    const user = await SystemUsers.findByPk(id, {
+      include: { model: User, as: "users" },
+      transaction,
+    });
+
+    if (!user) {
+      await transaction.rollback();
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const userRecord = user.users;
+
+    // Delete image locally
     if (user.image_url && fs.existsSync(user.image_url)) {
       fs.unlinkSync(user.image_url);
     }
 
-    await user.destroy();
+    if (userRecord) await userRecord.destroy({ transaction });
+    await user.destroy({ transaction });
+
+    await transaction.commit();
     res.status(200).json({ message: "User deleted successfully" });
   } catch (error) {
+    await transaction.rollback();
     res
       .status(500)
       .json({ message: "Failed to delete user", error: error.message });
   }
 };
 
-// Get All Users
+/* -----------------------------------------------------------
+   🟣 GET ALL SYSTEM USERS (with pagination)
+----------------------------------------------------------- */
 exports.getAllSystemUsers = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
@@ -238,10 +307,10 @@ exports.getAllSystemUsers = async (req, res) => {
     const includeConditions = [{ model: Department, as: "department" }];
 
     if (req.query.search) {
-      const searchQuery = `%${req.query.search}%`;
+      const q = `%${req.query.search}%`;
       filterConditions[Op.or] = [
-        { name: { [Op.like]: searchQuery } },
-        { email: { [Op.like]: searchQuery } },
+        { name: { [Op.like]: q } },
+        { email: { [Op.like]: q } },
       ];
     }
 
@@ -250,9 +319,8 @@ exports.getAllSystemUsers = async (req, res) => {
     }
 
     if (req.query.department) {
-      const departmentNameQuery = `%${req.query.department}%`;
       includeConditions[0].where = {
-        department_name: { [Op.like]: departmentNameQuery },
+        department_name: { [Op.like]: `%${req.query.department}%` },
       };
     }
 
@@ -260,8 +328,8 @@ exports.getAllSystemUsers = async (req, res) => {
       page,
       limit,
       where: filterConditions,
-      order: [["createdAt", "ASC"]],
       include: includeConditions,
+      order: [["createdAt", "ASC"]],
     });
 
     res.status(200).json({
@@ -276,11 +344,12 @@ exports.getAllSystemUsers = async (req, res) => {
   }
 };
 
-// Get User by ID
+/* -----------------------------------------------------------
+   🟤 GET SYSTEM USER BY ID
+----------------------------------------------------------- */
 exports.getSystemUserById = async (req, res) => {
   try {
     const { id } = req.params;
-
     const user = await SystemUsers.findByPk(id, {
       include: [{ model: Department, as: "department" }],
     });
@@ -295,15 +364,16 @@ exports.getSystemUserById = async (req, res) => {
   }
 };
 
+/* -----------------------------------------------------------
+   🎙 GET USERS WITH PROGRAMS
+----------------------------------------------------------- */
 exports.getSystemUsersWithPrograms = async (req, res) => {
   try {
     const limit = req.query.limit ? parseInt(req.query.limit) : null;
     const skipId = req.query.skipId ? parseInt(req.query.skipId) : null;
 
     const whereCondition = { show_profile: true };
-    if (skipId) {
-      whereCondition.id = { [Op.ne]: skipId };
-    }
+    if (skipId) whereCondition.id = { [Op.ne]: skipId };
 
     const users = await SystemUsers.findAll({
       where: whereCondition,
@@ -312,7 +382,6 @@ exports.getSystemUsersWithPrograms = async (req, res) => {
         {
           model: RadioProgram,
           as: "radio_programs",
-          required: false,
           include: [
             {
               model: ProgramCategory,
@@ -326,25 +395,28 @@ exports.getSystemUsersWithPrograms = async (req, res) => {
       order: limit ? Sequelize.literal("RAND()") : [["id", "DESC"]],
     });
 
-    const formatted = users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      image: user.image_url,
-      description: user.description,
-      shows: (user.radio_programs || []).map((rp) => ({
-        category: rp.program_category?.category || null,
-        startTime: rp.program_category?.start_time || null,
-        endTime: rp.program_category?.end_time || null,
+    const formatted = users.map((u) => ({
+      id: u.id,
+      name: u.name,
+      image: u.image_url,
+      description: u.description,
+      shows: u.radio_programs.map((p) => ({
+        category: p.program_category?.category,
+        startTime: p.program_category?.start_time,
+        endTime: p.program_category?.end_time,
       })),
     }));
 
     res.status(200).json({ success: true, data: formatted });
   } catch (error) {
-    console.error("Error fetching users with programs:", error);
+    console.error("❌ Error fetching RJ users:", error);
     res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
 
+/* -----------------------------------------------------------
+   🧾 GET RJ PROFILE BY ID
+----------------------------------------------------------- */
 exports.getRjUserProfile = async (req, res) => {
   try {
     const { id } = req.params;
@@ -366,26 +438,26 @@ exports.getRjUserProfile = async (req, res) => {
       ],
     });
 
-    if (!user) {
+    if (!user)
       return res
         .status(404)
         .json({ success: false, message: "User not found" });
-    }
 
-    const formattedUser = {
-      id: user.id,
-      name: user.name,
-      imageUrl: user.image_url,
-      description: user.description,
-      radioPrograms: user.radio_programs.map((program) => ({
-        id: program.id,
-        category: program.program_category.category,
-        startTime: program.program_category.start_time,
-        endTime: program.program_category.end_time,
-      })),
-    };
-
-    return res.status(200).json({ success: true, data: formattedUser });
+    res.status(200).json({
+      success: true,
+      data: {
+        id: user.id,
+        name: user.name,
+        imageUrl: user.image_url,
+        description: user.description,
+        radioPrograms: user.radio_programs.map((p) => ({
+          id: p.id,
+          category: p.program_category.category,
+          startTime: p.program_category.start_time,
+          endTime: p.program_category.end_time,
+        })),
+      },
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: "Internal server error" });
   }
