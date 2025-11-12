@@ -637,6 +637,7 @@ exports.expensesReport = async (req, res) => {
       };
     }
 
+    // Step 1️⃣: Fetch expense + category totals
     const expenses = await Expenses.findAll({
       attributes: [
         [fn("MONTH", col("date")), "month"],
@@ -644,7 +645,6 @@ exports.expensesReport = async (req, res) => {
         [col("categories.currency.symbol"), "currency_symbol"],
         [col("categories.currency.currency_name"), "currency_name"],
         [fn("SUM", col("categories.amount")), "total_amount"],
-        [fn("SUM", col("pending_amount")), "pending_amount"],
       ],
       include: [
         {
@@ -674,6 +674,39 @@ exports.expensesReport = async (req, res) => {
       raw: true,
     });
 
+    const pendingRaw = await Expenses.findAll({
+      attributes: [[fn("MONTH", col("date")), "month"], "id", "pending_amount"],
+      where: whereClause,
+      include: [
+        {
+          model: ExpenseCategory,
+          as: "categories",
+          attributes: ["currency_id"],
+        },
+      ],
+      raw: true,
+    });
+
+    const pendingMap = {};
+    const seen = new Set();
+
+    for (const row of pendingRaw) {
+      const month = row.month;
+      const cid = row["categories.currency_id"];
+      const expenseId = row.id;
+
+      if (!cid) continue;
+
+      const uniqueKey = `${expenseId}-${month}-${cid}`;
+      if (seen.has(uniqueKey)) continue;
+
+      seen.add(uniqueKey);
+
+      const monthCurrencyKey = `${month}-${cid}`;
+      pendingMap[monthCurrencyKey] =
+        (pendingMap[monthCurrencyKey] || 0) + Number(row.pending_amount || 0);
+    }
+
     const months = [
       "January",
       "February",
@@ -698,27 +731,22 @@ exports.expensesReport = async (req, res) => {
 
       const monthData = months.map((month, index) => {
         const match = currencyData.find((m) => Number(m.month) === index + 1);
+        const pendingAmt = pendingMap[`${index + 1}-${cid}`] || 0;
+
         return {
           month,
           total_amount: match ? Number(match.total_amount) : 0,
-          pending_amount: match ? Number(match.pending_amount) : 0,
+          pending_amount: pendingAmt,
         };
       });
 
-      const year_total = monthData.reduce(
-        (acc, month) => acc + month.total_amount,
-        0
-      );
-
-      const pending_total = monthData.reduce(
-        (acc, month) => acc + month.pending_amount,
-        0
-      );
+      const year_total = monthData.reduce((a, b) => a + b.total_amount, 0);
+      const pending_total = monthData.reduce((a, b) => a + b.pending_amount, 0);
 
       return {
         currency_id: cid,
         currency_symbol: symbol,
-        currency_name: currency_name,
+        currency_name,
         months: monthData,
         year_total,
         pending_total,
