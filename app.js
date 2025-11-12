@@ -51,37 +51,57 @@ app.use("/api/popup-banner", require("./routes/popupBannerRoutes"));
 app.use("/share", require("./routes/shareRoutes"));
 app.use("/api/agreements", require("./routes/agreementRoutes"));
 app.use("/api/passwords", require("./routes/passwordManagerRoutes"));
+
+//Radio programs
 app.use("/api/radio-station", require("./routes/radioStationRoutes"));
 app.use("/api/program-category", require("./routes/programCategoryRoutes"));
 app.use("/api/departments", require("./routes/departmentRoutes"));
 app.use("/api/system-user", require("./routes/systemUserRoutes"));
 app.use("/api/radio-program", require("./routes/radioProgramRoutes"));
+
+//Module Routes
 app.use("/api/modules", require("./routes/moduleRoutes"));
 app.use("/api/user-permissions", require("./routes/userPermissionsRoutes"));
+
+//expense Routes
 app.use("/api/expense", require("./routes/expenseRoutes"));
 app.use("/api/paid-through", require("./routes/paidThroughRoutes"));
 app.use("/api/payment-mode", require("./routes/paymentModeRoutes"));
 app.use("/api/merchant", require("./routes/merchantRoutes"));
 app.use("/api/category", require("./routes/categoryRoutes"));
+
+//Budget Routes
 app.use("/api/budget-category", require("./routes/budgetCategoryRoutes"));
 app.use("/api/budget", require("./routes/budgetRoutes"));
 app.use("/api/budget-tax", require("./routes/budgetTaxesRoutes"));
 app.use("/api/budget-merchant", require("./routes/budgetMerchantRoutes"));
 app.use("/api/budget-units", require("./routes/budgetUnitsRoutes"));
+
+//enquiry Routes
 app.use("/api/enquiry", require("./routes/enquiryRoutes"));
 app.use("/api/careers", require("./routes/careerRoutes"));
 app.use("/api/advertisement", require("./routes/advertisementRoutes"));
+
+//Audit Bill Routes
 app.use("/api/financial-year", require("./routes/financialYearRoutes"));
 app.use("/api/expense-bills", require("./routes/expenseBillRoutes"));
 app.use("/api/agreement-category", require("./routes/agreementCategoryRoutes"));
+
+//payslip-Routes
 app.use("/api/payslip-category", require("./routes/payslipComponentRoutes"));
 app.use("/api/payslip", require("./routes/payslipRoutes"));
+
+//Festival-Images-Routes
 app.use("/api/festival-gif", require("./routes/festivalGifRoutes"));
+
+//Visitor Tracking Routes
 app.use("/api/visit", require("./routes/visitorsRoutes"));
 app.use(
   "/api/previous-employment",
   require("./routes/previousEmploymentRoutes")
 );
+
+//employee-document-routes
 app.use("/api/employee-documents", require("./routes/employeeDocumentsRoutes"));
 app.use("/api/experience-letter", require("./routes/experienceLetterRoutes"));
 

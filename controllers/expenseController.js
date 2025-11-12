@@ -612,3 +612,130 @@ exports.restoreExpense = async (req, res) => {
     });
   }
 };
+
+exports.expensesReport = async (req, res) => {
+  try {
+    const { role, id } = req.user;
+    const { year, merchant } = req.query;
+
+    const selectedYear = year || new Date().getFullYear();
+
+    const whereClause = {
+      is_deleted: false,
+      date: {
+        [Op.between]: [`${selectedYear}-01-01`, `${selectedYear}-12-31`],
+      },
+    };
+
+    if (role !== "admin") {
+      whereClause.created_by = id;
+    }
+
+    if (merchant) {
+      whereClause.merchant = {
+        [Op.like]: `%${merchant}%`,
+      };
+    }
+
+    const expenses = await Expenses.findAll({
+      attributes: [
+        [fn("MONTH", col("date")), "month"],
+        [col("categories.currency_id"), "currency_id"],
+        [col("categories.currency.symbol"), "currency_symbol"],
+        [col("categories.currency.currency_name"), "currency_name"],
+        [fn("SUM", col("total_amount")), "total_amount"],
+        [fn("SUM", col("pending_amount")), "pending_amount"],
+      ],
+      include: [
+        {
+          model: ExpenseCategory,
+          as: "categories",
+          attributes: [],
+          include: [
+            {
+              model: Currency,
+              as: "currency",
+              attributes: [],
+            },
+          ],
+        },
+      ],
+      where: whereClause,
+      group: [
+        fn("MONTH", col("date")),
+        col("categories.currency_id"),
+        col("categories.currency.symbol"),
+        col("categories.currency.currency_name"),
+      ],
+      order: [
+        [col("categories.currency_id"), "ASC"],
+        [fn("MONTH", col("date")), "ASC"],
+      ],
+      raw: true,
+    });
+
+    const months = [
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
+    ];
+
+    const currencies = [...new Set(expenses.map((e) => e.currency_id))];
+
+    const report = currencies.map((cid) => {
+      const currencyData = expenses.filter((e) => e.currency_id === cid);
+      const symbol = currencyData[0]?.currency_symbol || "";
+      const currency_name = currencyData[0]?.currency_name || "";
+
+      const monthData = months.map((month, index) => {
+        const match = currencyData.find((m) => Number(m.month) === index + 1);
+        return {
+          month,
+          total_amount: match ? Number(match.total_amount) : 0,
+          pending_amount: match ? Number(match.pending_amount) : 0,
+        };
+      });
+
+      const year_total = monthData.reduce(
+        (acc, month) => acc + month.total_amount,
+        0
+      );
+
+      const pending_total = monthData.reduce(
+        (acc, month) => acc + month.pending_amount,
+        0
+      );
+
+      return {
+        currency_id: cid,
+        currency_symbol: symbol,
+        currency_name: currency_name,
+        months: monthData,
+        year_total,
+        pending_total,
+      };
+    });
+
+    return res.status(200).json({
+      status: "success",
+      year: selectedYear,
+      data: report,
+    });
+  } catch (error) {
+    console.error("❌ Expense report error:", error);
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch report",
+      error: error.message,
+    });
+  }
+};
