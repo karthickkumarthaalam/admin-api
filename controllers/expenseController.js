@@ -643,7 +643,7 @@ exports.expensesReport = async (req, res) => {
         [col("categories.currency_id"), "currency_id"],
         [col("categories.currency.symbol"), "currency_symbol"],
         [col("categories.currency.currency_name"), "currency_name"],
-        [fn("SUM", col("total_amount")), "total_amount"],
+        [fn("SUM", col("categories.amount")), "total_amount"],
         [fn("SUM", col("pending_amount")), "pending_amount"],
       ],
       include: [
