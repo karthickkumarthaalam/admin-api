@@ -215,6 +215,63 @@ exports.getEventById = async (req, res) => {
   }
 };
 
+exports.getEventBySlug = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const event = await Event.findOne({
+      where: {
+        slug,
+      },
+      include: [
+        {
+          model: EventBanner,
+          as: "banners",
+          required: false,
+          where: {
+            status: "active",
+          },
+        },
+        {
+          model: EventAmenity,
+          as: "amenities",
+          required: false,
+          where: {
+            status: "active",
+          },
+        },
+        {
+          model: EventCrewMember,
+          as: "crew_members",
+          required: false,
+          where: {
+            status: "active",
+          },
+        },
+      ],
+    });
+
+    if (!event) {
+      console.log("flag marking here for the banner not available");
+      return res.status(404).json({
+        status: "error",
+        message: "Event not found",
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: event,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch event.",
+      error: error.message,
+    });
+  }
+};
+
 exports.updateEvent = async (req, res) => {
   try {
     const { id } = req.params;

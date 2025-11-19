@@ -5,6 +5,7 @@ const uploadImage = require("../middlewares/uploadImages");
 const { authenticateToken } = require("../middlewares/authMiddleware");
 
 router.get("/all-events", eventController.getAllEventForUsers);
+router.get("/details/:slug", eventController.getEventBySlug);
 
 router.use(authenticateToken);
 
