@@ -169,8 +169,10 @@ exports.getAllExpenses = async (req, res) => {
     const limit = parseInt(req.query.limit) || 20;
     const search = req.query.search || "";
     const month = req.query.month;
-    const year = req.query.year;
     const showDeleted = req.query.show_deleted === "true";
+
+    const from_date = req.query.from_date;
+    const to_date = req.query.to_date;
 
     const { role, id } = req.user;
 
@@ -191,13 +193,20 @@ exports.getAllExpenses = async (req, res) => {
     }
 
     if (!showDeleted) {
-      if (req.query.date) {
-        whereCondition.date = req.query.date;
-      } else if (month && year) {
-        whereCondition[Op.and] = [
-          where(fn("MONTH", col("date")), month),
-          where(fn("YEAR", col("date")), year),
-        ];
+      if (from_date && to_date) {
+        whereCondition.date = {
+          [Op.between]: [from_date, to_date],
+        };
+      } else if (from_date) {
+        whereCondition.date = {
+          [Op.gte]: from_date,
+        };
+      } else if (to_date) {
+        whereCondition.date = {
+          [Op.lte]: to_date,
+        };
+      } else if (month) {
+        whereCondition[Op.and] = [where(fn("MONTH", col("date")), month)];
       }
     }
 
@@ -231,6 +240,7 @@ exports.getAllExpenses = async (req, res) => {
           model: SystemUsers,
           as: "creator",
           attributes: ["name", "email"],
+          required: false,
         },
       ],
       order: [["createdAt", "DESC"]],

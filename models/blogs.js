@@ -1,13 +1,12 @@
 module.exports = (sequelize, DataTypes) => {
-  const News = sequelize.define(
-    "News",
+  const Blogs = sequelize.define(
+    "Blogs",
     {
       id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
       },
-
       category: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -16,12 +15,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
       title: {
-        type: DataTypes.STRING,
-        allowNull: false,
-      },
-      slug: {
         type: DataTypes.STRING,
         allowNull: false,
       },
@@ -29,52 +23,29 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      slug: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       content: {
         type: DataTypes.TEXT,
         allowNull: false,
       },
-
       cover_image: {
         type: DataTypes.STRING,
         allowNull: false,
-      },
-      video_url: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      audio_url: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
-      country: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      state: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-      city: {
-        type: DataTypes.STRING,
-        allowNull: true,
       },
       published_by: {
         type: DataTypes.STRING,
         allowNull: false,
       },
-      rj_id: {
+      publisher_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
         references: {
-          model: "system_users",
+          models: "system_users",
           key: "id",
         },
         onDelete: "SET NULL",
-      },
-      content_creator: {
-        type: DataTypes.STRING,
-        allowNull: true,
       },
       published_date: {
         type: DataTypes.DATEONLY,
@@ -105,29 +76,24 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: "news",
+      tableName: "blogs",
       timestamps: true,
       paranoid: true,
     }
   );
 
-  News.associate = (models) => {
-    News.belongsTo(models.SystemUsers, {
-      foreignKey: "rj_id",
-      as: "rj",
+  Blogs.associate = (models) => {
+    Blogs.belongsTo(models.SystemUsers, {
+      foreignKey: "publisher_id",
+      as: "publisher",
     });
 
-    News.belongsTo(models.SystemUsers, {
+    Blogs.belongsTo(models.SystemUsers, {
       foreignKey: "created_by",
       targetKey: "user_id",
       as: "creator",
     });
-
-    News.hasMany(models.NewsMedia, {
-      foreignKey: "news_id",
-      as: "media",
-    });
   };
 
-  return News;
+  return Blogs;
 };

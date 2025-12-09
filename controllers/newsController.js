@@ -19,6 +19,7 @@ exports.createNews = async (req, res) => {
       title,
       subtitle,
       published_by,
+      rj_id,
       content_creator,
       content,
       country,
@@ -64,6 +65,7 @@ exports.createNews = async (req, res) => {
         slug,
         content,
         published_by,
+        rj_id,
         content_creator,
         country,
         state,
@@ -171,6 +173,7 @@ exports.updateNews = async (req, res) => {
       subtitle,
       content,
       published_by,
+      rj_id,
       content_creator,
       country,
       state,
@@ -187,16 +190,6 @@ exports.updateNews = async (req, res) => {
       return res
         .status(404)
         .json({ status: "error", message: "News not found" });
-    }
-
-    if (
-      req.user &&
-      req.user.role !== "admin" &&
-      news.created_by !== req.user.id
-    ) {
-      return res
-        .status(403)
-        .json({ message: "Unauthorized to update this news" });
     }
 
     // 🧩 Handle new cover image if provided
@@ -244,6 +237,7 @@ exports.updateNews = async (req, res) => {
       slug,
       content,
       published_by,
+      rj_id,
       content_creator,
       country,
       state,
@@ -265,6 +259,61 @@ exports.updateNews = async (req, res) => {
       status: "error",
       message: "Failed to update news",
       error: error.message,
+    });
+  }
+};
+
+exports.updateNewsStatus = async (req, res) => {
+  try {
+    const news = await News.findByPk(req.params.id);
+
+    if (!news) {
+      return res.status(404).json({
+        status: "error",
+        message: "News not found",
+      });
+    }
+
+    const { status } = req.body;
+
+    const allowed = ["draft", "published", "archived"];
+
+    if (!allowed.includes(status)) {
+      return res.status(400).json({
+        status: "error",
+        message: "Invalid Status",
+      });
+    }
+
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        status: "error",
+        message: "Only admin can update status",
+      });
+    }
+
+    const statusUpdater = await SystemUsers.findOne({
+      where: {
+        user_id: req.user.id,
+      },
+      attributes: ["name"],
+    });
+
+    // ✅ Update status and store admin name + timestamp
+    news.status = status;
+    news.status_updated_by = (statusUpdater && statusUpdater?.name) || "Admin";
+    news.status_updated_at = new Date();
+
+    await news.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "News status updated successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to updated news status",
     });
   }
 };
@@ -372,16 +421,6 @@ exports.deleteNews = async (req, res) => {
         status: "error",
         message: "News not found",
       });
-    }
-
-    if (
-      req.user &&
-      req.user.role !== "admin" &&
-      news.created_by !== req.user.id
-    ) {
-      return res
-        .status(403)
-        .json({ message: "Unauthorized to delete this news" });
     }
 
     if (news.cover_image) {

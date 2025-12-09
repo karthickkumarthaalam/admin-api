@@ -28,5 +28,6 @@ router.patch(
   newsController.updateNews
 );
 router.delete("/:id", newsController.deleteNews);
+router.patch("/status/:id", newsController.updateNewsStatus);
 
 module.exports = router;

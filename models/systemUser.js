@@ -136,6 +136,18 @@ module.exports = (sequelize, DataTypes) => {
       foreignKey: "rj_id",
       as: "radio_programs",
     });
+    SystemUsers.hasMany(models.Podcast, {
+      foreignKey: "rj_id",
+      as: "podcasts",
+    });
+    SystemUsers.hasMany(models.News, {
+      foreignKey: "rj_id",
+      as: "news",
+    });
+    SystemUsers.hasMany(models.Blogs, {
+      foreignKey: "publisher_id",
+      as: "blogs",
+    });
     SystemUsers.hasMany(models.Payslip, {
       foreignKey: "user_id",
       as: "payslips",

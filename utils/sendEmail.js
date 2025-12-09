@@ -4,41 +4,45 @@ const path = require("path");
 require("dotenv").config();
 
 const transporter = nodemailer.createTransport({
-    host: "smtp.zeptomail.in",
-    port: 587,
-    secure: false,
-    auth: {
-        user: "emailapikey",
-        pass: process.env.ZEPTO_API_KEY,
-    },
-    tls: {
-        rejectUnauthorized: false,
-    },
+  host: "smtp.zeptomail.in",
+  port: 587,
+  secure: false,
+  auth: {
+    user: "emailapikey",
+    pass: process.env.ZEPTO_API_KEY,
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
 });
 
-const sendEmail = async ({ toEmail, subject, htmlContent, attachments = [] }) => {
-    try {
-        const mailOptions = {
-            from: '"Thaalam Media" <noreply@thaalam.ch>',
-            to: toEmail,
-            subject,
-            html: htmlContent,
-            attachments,
-        };
+const sendEmail = async ({
+  toEmail,
+  subject,
+  htmlContent,
+  attachments = [],
+}) => {
+  try {
+    const mailOptions = {
+      from: '"Thaalam Media" <noreply@thaalam.ch>',
+      to: toEmail,
+      subject,
+      html: htmlContent,
+      attachments,
+    };
 
-        const info = await transporter.sendMail(mailOptions);
-        console.log("Email sent:", info.messageId);
-        return info;
-    } catch (error) {
-        console.error("ZeptoMail sending error:", error);
-        throw new Error("Failed to send email via ZeptoMail");
-    }
+    const info = await transporter.sendMail(mailOptions);
+    return info;
+  } catch (error) {
+    console.error("ZeptoMail sending error:", error);
+    throw new Error("Failed to send email via ZeptoMail");
+  }
 };
 
 const generateOTP = () => crypto.randomInt(100000, 999999).toString();
 
 const sendOtpEmail = async (toEmail, toName, otp) => {
-    const htmlContent = `
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2>Hello ${toName},</h2>
       <p>Your OTP for password reset is:</p>
@@ -50,19 +54,25 @@ const sendOtpEmail = async (toEmail, toName, otp) => {
     </div>
   `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        },
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-    return await sendEmail({ toEmail, toName, subject: "Your Password Reset OTP", htmlContent, attachments });
+  return await sendEmail({
+    toEmail,
+    toName,
+    subject: "Your Password Reset OTP",
+    htmlContent,
+    attachments,
+  });
 };
 
 const verificationEmail = async (toEmail, toName, otp) => {
-    const htmlContent = `   
+  const htmlContent = `   
      <div style="font-family: Arial, sans-serif; color: #333;>
         <h2>Hello ${toName}, </h2>
         <p>Verify your account</p>
@@ -74,20 +84,24 @@ const verificationEmail = async (toEmail, toName, otp) => {
      </div>
     `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        }
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-
-    return await sendEmail({ toEmail, subject: "Verification OTP ", htmlContent, attachments });
+  return await sendEmail({
+    toEmail,
+    subject: "Verification OTP ",
+    htmlContent,
+    attachments,
+  });
 };
 
 const sendExpiryEmail = async (toEmail, toName, expiryDate) => {
-    const htmlContent = `
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2>Hello ${toName},</h2>
       <p>Your subscription is expired!!!</p>
@@ -98,19 +112,25 @@ const sendExpiryEmail = async (toEmail, toName, expiryDate) => {
     </div>
   `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        },
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-    return await sendEmail({ toEmail, toName, subject: "Subscription Expiry Notice", htmlContent, attachments });
+  return await sendEmail({
+    toEmail,
+    toName,
+    subject: "Subscription Expiry Notice",
+    htmlContent,
+    attachments,
+  });
 };
 
 const sendPreExpiryEmail = async (toEmail, toName, expiryDate) => {
-    const htmlContent = `
+  const htmlContent = `
      <div style="font-family: Arial, sans-serif; color: #333;">
         <h2>Hello ${toName}</h2>
         <p>Your subscription is expiring on:</p>
@@ -122,20 +142,25 @@ const sendPreExpiryEmail = async (toEmail, toName, expiryDate) => {
     </div>
   `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        },
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-    return await sendEmail({ toEmail, toName, subject: "Subscription Pre Expiry Notice", htmlContent, attachments });
+  return await sendEmail({
+    toEmail,
+    toName,
+    subject: "Subscription Pre Expiry Notice",
+    htmlContent,
+    attachments,
+  });
 };
 
-
 const sendGracePeriodEmail = async (toEmail, toName, expiryDate) => {
-    const htmlContent = `
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2>Hello ${toName},</h2>
       <p>Your subscription expired on:</p>
@@ -149,25 +174,32 @@ const sendGracePeriodEmail = async (toEmail, toName, expiryDate) => {
     </div>
   `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        },
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-    return await sendEmail({
-        toEmail,
-        toName,
-        subject: "Subscription Grace Period Notice",
-        htmlContent,
-        attachments,
-    });
+  return await sendEmail({
+    toEmail,
+    toName,
+    subject: "Subscription Grace Period Notice",
+    htmlContent,
+    attachments,
+  });
 };
 
-const sendPaymentReceiptEmail = async (toEmail, toName, packageName, amount, currency, receiptUrl) => {
-    const htmlContent = `
+const sendPaymentReceiptEmail = async (
+  toEmail,
+  toName,
+  packageName,
+  amount,
+  currency,
+  receiptUrl
+) => {
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2>Hello ${toName},</h2>
       <p>Thank you for your purchase! Your subscription is now active.</p>
@@ -182,24 +214,24 @@ const sendPaymentReceiptEmail = async (toEmail, toName, packageName, amount, cur
     </div>
   `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        },
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-    return await sendEmail({
-        toEmail,
-        subject: "Your Payment Receipt - Thaalam Media",
-        htmlContent,
-        attachments,
-    });
+  return await sendEmail({
+    toEmail,
+    subject: "Your Payment Receipt - Thaalam Media",
+    htmlContent,
+    attachments,
+  });
 };
 
 const sendRjPasswordEmail = async (toEmail, toName, plainPassword) => {
-    const htmlContent = `
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
       <h2>Hi ${toName},</h2>
       <p>Welcome to <strong>Thaalam Media</strong>!</p>
@@ -220,24 +252,24 @@ const sendRjPasswordEmail = async (toEmail, toName, plainPassword) => {
     </div>
   `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        },
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-    return await sendEmail({
-        toEmail,
-        subject: "Your User profile Credentials - Thaalam Media",
-        htmlContent,
-        attachments,
-    });
+  return await sendEmail({
+    toEmail,
+    subject: "Your User profile Credentials - Thaalam Media",
+    htmlContent,
+    attachments,
+  });
 };
 
 const sendEnquiryEmail = async (toEmail, toName, subjectText, messageText) => {
-    const htmlContent = `
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
         <h2>Hello ${toName}, </h2>
         <p>Thank you for getting in touch with <strong>Thaalam Media</strong>!</p>
@@ -254,24 +286,24 @@ const sendEnquiryEmail = async (toEmail, toName, subjectText, messageText) => {
     </div>
     `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        }
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-    return await sendEmail({
-        toEmail,
-        subject: "We’ve Received Your Enquiry - Thaalam Media",
-        htmlContent,
-        attachments
-    });
+  return await sendEmail({
+    toEmail,
+    subject: "We’ve Received Your Enquiry - Thaalam Media",
+    htmlContent,
+    attachments,
+  });
 };
 
 const sendCareerEmail = async (toEmail, toName, subjectText) => {
-    const htmlContent = `
+  const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
         <h2>Hello ${toName},</h2>
         <p>Thank you for applying to <strong>Thaalam Media</strong>!</p>
@@ -289,33 +321,231 @@ const sendCareerEmail = async (toEmail, toName, subjectText) => {
     </div>
     `;
 
-    const attachments = [
-        {
-            filename: "thaalam-logo.png",
-            path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
-            cid: "logoimage",
-        }
-    ];
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
 
-    return await sendEmail({
-        toEmail,
-        subject: "Thank you for Applying - Thaalam Media",
-        htmlContent,
-        attachments
-    });
+  return await sendEmail({
+    toEmail,
+    subject: "Thank you for Applying - Thaalam Media",
+    htmlContent,
+    attachments,
+  });
 };
 
+const sendPodcastCreatorEmail = async (toEmail, toName) => {
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; color: #222; max-width: 600px; margin: 0 auto;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        <tr>
+          <td style="padding: 16px 0;">
+            <img src="cid:logoimage" alt="Thaalam Media" style="width: 160px;"/>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 8px 0 0 0;">
+            <h2 style="font-size: 22px; margin: 0 0 10px 0;">Hello ${toName},</h2>
+            <p style="font-size: 15px; line-height: 1.6; margin: 0 0 10px 0;">
+              Thank you for applying to become a <strong>Podcast Creator</strong> with <strong>Thaalam Media</strong>
+            </p>
+            <p style="font-size: 15px; line-height: 1.6; margin: 0 0 10px 0;">
+              We’ve received your application and our <strong>Admin Team</strong> will review your details shortly.
+            </p>
+          </td>
+        </tr>
+  
+        <tr>
+          <td>
+            <div style="background:#f8f8f8; border-radius: 6px; padding: 12px 14px; border-left: 4px solid #cc0000; margin: 16px 0;">
+              <p style="margin: 0; font-size: 14px;">
+                <strong>Current Status:</strong> <span style="color:#cc0000;">Pending Verification</span>
+              </p>
+              <p style="margin: 6px 0 0 0; font-size: 13px; color:#666;">
+                Once your profile is verified, you will receive a separate email with your podcast creator
+                <strong>login credentials</strong> (username and temporary password).
+              </p>
+            </div>
+          </td>
+        </tr>
+  
+        <tr>
+          <td>
+            <p style="font-size: 14px; line-height: 1.6; margin: 10px 0;">
+              After your account is activated, you’ll be able to:
+            </p>
+            <ul style="font-size: 14px; margin: 4px 0 12px 18px; padding: 0;">
+              <li>Upload and manage your podcast episodes</li>
+              <li>Submit podcasts for admin review</li>
+              <li>Get your approved podcasts published on the main Thaalam application</li>
+            </ul>
+          </td>
+        </tr>
+  
+        <tr>
+          <td>
+            <p style="font-size: 14px; line-height: 1.6; margin: 10px 0;">
+              If you have any questions in the meantime, feel free to reply to this email.
+            </p>
+            <p style="font-size: 14px; margin: 16px 0 4px 0;">
+              Warm regards,<br/>
+              <strong>Thaalam Media Team</strong>
+            </p>
+          </td>
+        </tr>
+      </table>
+    </div>
+    `;
+
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
+
+  // Send acknowledgement mail
+  await sendEmail({
+    toEmail: toEmail,
+    subject: "Thank you for Applying as Podcast Creator - Thaalam",
+    htmlContent,
+    attachments,
+  });
+};
+
+const creatorCredentialSharing = async (toName, toEmail, password) => {
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; color:#222; max-width:600px; padding:8px;border-radius:8px;;>
+          <h2 style="color:#cc0000;">🎙 Podcast Creator Access Approved</h2>
+          <p>Hello <strong>${toName}</strong>,</p>
+          <p>Congratulations! Your Podcast Creator profile is verified and approved by Thaalam</p>
+          <p>You can now log in to your <strong>Podcast Publishing Dashboard</strong> using these credentials:</p>
+
+          <div style="padding:12px 16px; margin:16px 0; background:#fff7f7; border-left:4px solid #cc0000;border-radius:6px;">
+            <p><strong>Email:</strong> ${toEmail}</p>
+            <p><strong>Temporary Password:</strong> ${password}</p>
+          </div>
+
+          <p>This account is authorization-controlled. Any podcasts you publish will go to admin review before it becomes public on the main podcast page.</p>
+          <p>Please change your password after your first login (optional but recommended).</p>
+
+          <br>
+          <p>Warm Regards,<br><strong>Thaalam Media</strong></p>
+          <img src="cid:logoimage" width="120" style="margin-top:16px;"/>
+        </div>
+  `;
+
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
+
+  await sendEmail({
+    toEmail: toEmail,
+    subject: "Podcast Creator Portal Access - Approved ",
+    htmlContent,
+    attachments,
+  });
+};
+
+const creatorRejectionTemplate = async (toName, toEmail, reason) => {
+  const htmlContent = `
+   <div style="font-family: Arial, sans-serif; color:#222; max-width:520px; padding:8px;">
+          <h2 style="color:#cc0000;">Podcast Creator Request Update</h2>
+          <p>Hello ${toName},</p>
+          <p>Your Podcast Creator request was reviewed, but unfortunately it was not approved at this time.</p>
+
+          <div style="padding:10px; margin:14px 0; background:#f8f8f8;border-left:4px solid #cc0000;border-radius:6px;">
+            <p><strong>Status:</strong> Rejected</p>
+            <p><strong>Reason:</strong> ${reason}</p>
+          </div>
+
+          <p>You may correct and reapply anytime. If you need help, just reply to this mail.</p>
+
+          <br>
+          <p>Regards,<br><strong>Thaalam Media</strong></p>
+          <img src="cid:logoimage" width="120" style="margin-top:16px;"/>
+        </div>
+  `;
+
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
+
+  await sendEmail({
+    toEmail: toEmail,
+    subject: "Podcast Creator Request - Reviewed",
+    htmlContent,
+    attachments,
+  });
+};
+
+const sendCreatorOTP = async (toName, toEmail, otp) => {
+  const htmlContent = `
+  <div style="font-family: 'Inter', Arial, sans-serif; background: #ffffff; padding: 22px; border-radius: 12px; max-width: 480px; margin: auto; border: 1px solid #eaeaea;">
+  <div style="text-align:center; margin-bottom:18px;">
+    <img src="cid:logoimage" width="120" />
+  </div>
+
+  <h2 style="font-size: 20px; color:#111; margin-bottom:6px;">Hello ${toName},</h2>
+  <p style="font-size: 15px; color:#555; margin-top:0;">We received a request to reset your password for your Podcast Creator account.</p>
+
+  <div style="text-align:center; background:#fff7f7; padding:16px; border-radius:8px; margin:18px 0; border-left: 4px solid #cc0000;">
+     <h1 style="color:#cc0000; letter-spacing:3px; font-size:28px; margin:4px 0;">${otp}</h1>
+     <p style="font-size:13px; color:#666; margin-top:6px;">This OTP is valid for <strong>5 minutes</strong> ⏱</p>
+  </div>
+
+  <p style="font-size:14px; color:#444;">If you did not request this, you can safely ignore this email — your account is still secure.</p>
+
+  <hr style="border:none; border-top:1px solid #eee; margin:22px 0;"/>
+
+  <p style="font-size:14px; margin-bottom:2px;">Warm Regards,<br/>
+    <strong>Thaalam Media</strong>
+  </p>
+</div>
+  `;
+
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
+
+  await sendEmail({
+    toEmail: toEmail,
+    subject: "Your Password Reset OTP",
+    htmlContent,
+    attachments,
+  });
+};
 
 module.exports = {
-    sendEmail,
-    sendOtpEmail,
-    verificationEmail,
-    sendExpiryEmail,
-    sendPreExpiryEmail,
-    sendGracePeriodEmail,
-    sendPaymentReceiptEmail,
-    generateOTP,
-    sendRjPasswordEmail,
-    sendEnquiryEmail,
-    sendCareerEmail
+  sendEmail,
+  sendOtpEmail,
+  verificationEmail,
+  sendExpiryEmail,
+  sendPreExpiryEmail,
+  sendGracePeriodEmail,
+  sendPaymentReceiptEmail,
+  generateOTP,
+  sendRjPasswordEmail,
+  sendEnquiryEmail,
+  sendCareerEmail,
+  sendPodcastCreatorEmail,
+  creatorCredentialSharing,
+  creatorRejectionTemplate,
+  sendCreatorOTP,
 };

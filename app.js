@@ -46,7 +46,11 @@ app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/memberPackage", require("./routes/memberPackageRoutes"));
 app.use("/api/transactions", require("./routes/transactionRoutes"));
 app.use("/api/banners", require("./routes/bannerRoutes"));
+
+//podcasts
 app.use("/api/podcasts", require("./routes/podcastRoutes"));
+app.use("/api/podcast-category", require("./routes/podcastCategoryRoutes"));
+
 app.use("/api/popup-banner", require("./routes/popupBannerRoutes"));
 app.use("/share", require("./routes/shareRoutes"));
 app.use("/api/agreements", require("./routes/agreementRoutes"));
@@ -120,6 +124,13 @@ app.use("/api/event-crew", require("./routes/eventCrewMemberRoutes"));
 
 //notification
 app.use("/api/notifications", require("./routes/notificationRoutes"));
+
+//RJ Details
+app.use("/api/rj-details", require("./routes/rjDetailsRoutes"));
+
+//Blogs
+app.use("/api/blogs-category", require("./routes/blogsCategoryRoutes"));
+app.use("/api/blogs", require("./routes/blogsRoutes"));
 
 const io = new Server(server, {
   cors: {

@@ -23,7 +23,7 @@ exports.addComment = async (req, res) => {
     let member = null;
 
     if (member_id) {
-      member = await Members.findOne({ where: { id: member_id } });
+      member = await Members.findOne({ where: { member_id: member_id } });
       if (!member) {
         return res
           .status(404)
