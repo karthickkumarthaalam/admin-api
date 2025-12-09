@@ -112,13 +112,13 @@ exports.getAllNews = async (req, res) => {
     if (req.query.category) {
       whereCondition.category = req.query.category;
     }
-
-    if (req.query.published_by) {
-      whereCondition.published_by = req.query.published_by;
-    }
-
     if (req.user && req.user.role !== "admin") {
-      whereCondition.created_by = req.user.id;
+      const systemUser = await SystemUsers.findOne({
+        where: {
+          user_id: req.user.id,
+        },
+      });
+      whereCondition.published_by = systemUser.name;
     }
 
     if (req.query.search) {

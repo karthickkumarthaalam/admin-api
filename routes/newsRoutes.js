@@ -7,6 +7,7 @@ const uploadImage = require("../middlewares/uploadImages");
 router.get("/per-slug/:slug", newsController.getNewsBySlug);
 router.get("/related-news/:category", newsController.getRelatedNews);
 router.get("/", newsController.getAllNews);
+router.get("/admin-list", authenticateToken, newsController.getAllNews);
 router.get("/:id", newsController.getNewsById);
 
 router.use(authenticateToken);

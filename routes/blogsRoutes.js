@@ -7,6 +7,7 @@ const uploadImage = require("../middlewares/uploadImages");
 router.get("/per-slug/:slug", blogsController.getBlogBySlug);
 router.get("/related-blogs/:category", blogsController.getRelatedBlogs);
 router.get("/", blogsController.getAllBlogs);
+router.get("/admin-list", authenticateToken, blogsController.getAllBlogs);
 router.get("/:id", blogsController.getBlogById);
 
 router.use(authenticateToken);

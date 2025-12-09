@@ -106,7 +106,12 @@ exports.getAllBlogs = async (req, res) => {
     }
 
     if (req.user && req.user.role !== "admin") {
-      whereCondition.created_by = req.user.id;
+      const systemUser = await SystemUsers.findOne({
+        where: {
+          user_id: req.user.id,
+        },
+      });
+      whereCondition.published_by = systemUser.name;
     }
 
     if (req.query.search) {
