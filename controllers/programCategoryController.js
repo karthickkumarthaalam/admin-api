@@ -1,7 +1,10 @@
 const db = require("../models");
 const fs = require("fs");
 const pagination = require("../utils/pagination");
-const { uploadToCpanel } = require("../services/uploadToCpanel");
+const {
+  uploadToCpanel,
+  deleteFromCpanel,
+} = require("../services/uploadToCpanel");
 const { ProgramCategory } = db;
 
 // Create Program Category
@@ -164,9 +167,15 @@ exports.updateProgramCategory = async (req, res) => {
     }
 
     if (image && image.path) {
+      const serverPath = "programBanner/images";
+      if (programCategory.image_url) {
+        const filename = programCategory.image_url.split("/").pop();
+        await deleteFromCpanel(serverPath, filename);
+      }
+
       let image_url = await uploadToCpanel(
         image.path,
-        "programBanner/images",
+        serverPath,
         image.originalname
       );
       programCategory.image_url = image_url;
@@ -221,6 +230,59 @@ exports.deleteProgramCategory = async (req, res) => {
       status: "error",
       message: "Failed to delete Program Category",
       error: error.message,
+    });
+  }
+};
+
+exports.updateCategoryImage = async (req, res) => {
+  const image = req.files?.["image"]?.[0];
+
+  try {
+    const { id } = req.params;
+
+    if (!image) {
+      return res.status(400).json({ message: "No image uploaded." });
+    }
+
+    const program = await ProgramCategory.findByPk(id);
+    if (!program) {
+      return res.status(404).json({ message: "Program not found" });
+    }
+
+    const serverPath = "programBanner/images";
+
+    if (program.image_url) {
+      try {
+        const filename = program.image_url.split("/").pop();
+        await deleteFromCpanel(serverPath, filename);
+      } catch (err) {
+        console.log("Old image delete failed:", err);
+      }
+    }
+
+    const image_url = await uploadToCpanel(
+      image.path,
+      serverPath,
+      image.originalname
+    );
+
+    program.image_url = image_url;
+    await program.save();
+
+    if (fs.existsSync(image.path)) fs.unlinkSync(image.path);
+
+    return res.status(200).json({
+      message: "Program image updated successfully",
+      image_url,
+    });
+  } catch (error) {
+    if (image?.path && fs.existsSync(image.path)) {
+      fs.unlinkSync(image.path);
+    }
+
+    return res.status(500).json({
+      error: error.message,
+      message: "Failed to update image",
     });
   }
 };

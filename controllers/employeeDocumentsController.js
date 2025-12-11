@@ -9,35 +9,50 @@ const {
 
 exports.uploadEmployeeDocument = async (req, res) => {
   const file = req.file;
-  const { system_user_id, doc_type, notes } = req.body;
+  let { system_user_id, user_id, doc_type, notes } = req.body;
 
-  // Temp file path for cleanup
   const tempFilePath = file?.path;
 
-  if (!file || !system_user_id || !doc_type) {
-    // Delete temp file if exists
-    if (tempFilePath) {
-      fs.unlink(tempFilePath, (err) => {
-        if (err) console.error("Failed to delete temp file:", err);
-      });
-    }
+  if (!file || !doc_type) {
+    if (tempFilePath) fs.unlink(tempFilePath, () => {});
     return res.status(400).json({
-      message: "system_user_id, doc_type, and file are required",
+      message: "doc_type and file are required",
     });
   }
 
   try {
+    if (user_id) {
+      const systemUser = await db.SystemUsers.findOne({
+        where: { user_id },
+      });
+
+      if (!systemUser) {
+        if (tempFilePath) fs.unlink(tempFilePath, () => {});
+        return res.status(404).json({
+          message: "No system user found for given user_id",
+        });
+      }
+
+      system_user_id = systemUser.id;
+    }
+
+    // Final validation
+    if (!system_user_id) {
+      if (tempFilePath) fs.unlink(tempFilePath, () => {});
+      return res.status(400).json({
+        message: "system_user_id or user_id is required",
+      });
+    }
+
     const remoteFolder = "employee_docs";
     const remoteFileName = `${Date.now()}_${file.originalname}`;
 
-    // Upload to cPanel
     const fileUrl = await uploadToCpanel(
       tempFilePath,
       remoteFolder,
       remoteFileName
     );
 
-    // Save document record in database
     const document = await EmployeeDocuments.create({
       system_user_id,
       doc_type,
@@ -47,10 +62,7 @@ exports.uploadEmployeeDocument = async (req, res) => {
       notes: notes || null,
     });
 
-    // Delete temp file after successful upload
-    fs.unlink(tempFilePath, (err) => {
-      if (err) console.error("Failed to delete temp file:", err);
-    });
+    fs.unlink(tempFilePath, () => {});
 
     res.status(201).json({
       message: "Document uploaded successfully",
@@ -59,12 +71,7 @@ exports.uploadEmployeeDocument = async (req, res) => {
   } catch (error) {
     console.error("❌ Upload failed:", error);
 
-    // Delete temp file even if something failed
-    if (tempFilePath) {
-      fs.unlink(tempFilePath, (err) => {
-        if (err) console.error("Failed to delete temp file:", err);
-      });
-    }
+    if (tempFilePath) fs.unlink(tempFilePath, () => {});
 
     res.status(500).json({
       message: "Failed to upload employee document",
@@ -75,9 +82,33 @@ exports.uploadEmployeeDocument = async (req, res) => {
 
 exports.getEmployeeDocuments = async (req, res) => {
   try {
-    const { system_user_id } = req.query;
+    const { system_user_id, user_id } = req.query;
 
-    const whereClause = system_user_id ? { system_user_id } : {};
+    let whereClause;
+
+    if (system_user_id) {
+      whereClause = {
+        system_user_id,
+      };
+    }
+
+    if (user_id) {
+      const systemUser = await db.SystemUsers.findOne({
+        where: {
+          user_id,
+        },
+      });
+
+      if (!systemUser) {
+        return res.status(404).json({
+          message: "User not found",
+        });
+      }
+
+      whereClause = {
+        system_user_id: systemUser.id,
+      };
+    }
 
     const documents = await EmployeeDocuments.findAll({
       where: whereClause,

@@ -4,8 +4,9 @@ const { PreviousEmployment } = db;
 
 exports.createPreviousEmployment = async (req, res) => {
   try {
-    const {
+    let {
       system_user_id,
+      user_id,
       company_name,
       designation,
       from_date,
@@ -16,11 +17,31 @@ exports.createPreviousEmployment = async (req, res) => {
       reference_contact,
     } = req.body;
 
-    if (!system_user_id || !company_name || !designation || !from_date) {
+    if (!company_name || !designation || !from_date) {
       return res.status(400).json({
         message:
           "system_user_id, company_name, designation, and from_date are required",
       });
+    }
+
+    if (user_id) {
+      const systemUser = await db.SystemUsers.findOne({
+        where: {
+          user_id,
+        },
+      });
+
+      if (!systemUser) {
+        return res.status(404).json({
+          message: "system user not found",
+        });
+      }
+
+      system_user_id = systemUser.id;
+    }
+
+    if (!system_user_id) {
+      return res.status(400).json({ message: "System user id is required" });
     }
 
     const employment = await PreviousEmployment.create({
@@ -40,6 +61,7 @@ exports.createPreviousEmployment = async (req, res) => {
       data: employment,
     });
   } catch (error) {
+    console.log(error, "showing error");
     res.status(500).json({
       message: "Failed to create previous employment",
       error: error.message,
@@ -49,9 +71,32 @@ exports.createPreviousEmployment = async (req, res) => {
 
 exports.getPreviousEmployments = async (req, res) => {
   try {
-    const { system_user_id } = req.query;
+    const { system_user_id, user_id } = req.query;
 
-    const whereClause = system_user_id ? { system_user_id } : {};
+    let whereClause;
+
+    if (system_user_id) {
+      whereClause = {
+        system_user_id,
+      };
+    }
+
+    if (user_id) {
+      const systemUser = await db.SystemUsers.findOne({
+        where: {
+          user_id,
+        },
+      });
+
+      if (!systemUser) {
+        return res.status(404).json({
+          message: "System user not found",
+        });
+      }
+      whereClause = {
+        system_user_id: systemUser.id,
+      };
+    }
 
     const employments = await PreviousEmployment.findAll({
       where: whereClause,

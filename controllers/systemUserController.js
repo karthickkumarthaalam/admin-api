@@ -364,6 +364,36 @@ exports.getSystemUserById = async (req, res) => {
   }
 };
 
+exports.getSystemUserByUserId = async (req, res) => {
+  try {
+    const { user_id } = req.params;
+
+    const systemUser = await SystemUsers.findOne({
+      where: {
+        user_id,
+      },
+      include: [
+        {
+          model: Department,
+          as: "department",
+        },
+      ],
+    });
+
+    if (!systemUser) {
+      return res.status(404).json({ messge: "user not found" });
+    }
+
+    res
+      .status(200)
+      .json({ message: "User fetched successfully", data: systemUser });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Failed to fetch user", error: error.message });
+  }
+};
+
 /* -----------------------------------------------------------
    🎙 GET USERS WITH PROGRAMS
 ----------------------------------------------------------- */
