@@ -106,6 +106,8 @@ db.PodcastCreator = require("./podcastCreator")(sequelize, Sequelize);
 //Notification
 db.Notification = require("./notification")(sequelize, Sequelize);
 
+db.AuditLogs = require("./auditLogs")(sequelize, Sequelize);
+
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);

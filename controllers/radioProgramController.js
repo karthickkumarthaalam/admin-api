@@ -7,6 +7,8 @@ const {
 const { Op, Sequelize } = require("sequelize");
 const pagination = require("../utils/pagination");
 const moment = require("moment-timezone");
+const getDiff = require("../utils/getDiff");
+const auditLogs = require("../controllers/auditLogsController");
 
 exports.createRadioProgram = async (req, res) => {
   try {
@@ -35,6 +37,15 @@ exports.createRadioProgram = async (req, res) => {
       radio_station_id,
       broadcast_days,
       status: status || "active",
+    });
+
+    await auditLogs({
+      entity_type: "Radio Program",
+      entity_id: newProgram.id,
+      action: "create",
+      changed_by: req.user.id,
+      changes: newProgram.dataValues,
+      description: "Radio Program created",
     });
 
     res.status(201).json({
@@ -140,6 +151,8 @@ exports.updateRadioProgram = async (req, res) => {
       return res.status(404).json({ message: "Radio program not found." });
     }
 
+    const oldData = { ...program.dataValues };
+
     const {
       program_category_id,
       rj_id,
@@ -176,6 +189,15 @@ exports.updateRadioProgram = async (req, res) => {
           : program.show_host_profile,
     });
 
+    await auditLogs({
+      entity_type: "Radio Program",
+      entity_id: program.id,
+      action: "update",
+      changed_by: req.user.id,
+      changes: getDiff(oldData, program.dataValues),
+      description: "Radio Program updated",
+    });
+
     res.status(200).json({
       message: "Radio program updated successfully.",
       data: program,
@@ -196,8 +218,19 @@ exports.updateProgramStatus = async (req, res) => {
       return res.status(404).json({ message: "Radio program not found." });
     }
 
+    const oldData = { status: program.status };
+
     const newStatus = program.status === "active" ? "in-active" : "active";
     await program.update({ status: newStatus });
+
+    await auditLogs({
+      entity_type: "Radio Program",
+      entity_id: program.id,
+      action: "update-status",
+      changed_by: req.user.id,
+      changes: getDiff(oldData, { status: newStatus }),
+      description: "Radio Program status updated",
+    });
 
     res.status(200).json({
       message: `Radio program status updated to ${newStatus}.`,
@@ -219,7 +252,19 @@ exports.deleteRadioProgram = async (req, res) => {
       return res.status(404).json({ message: "Radio program not found." });
     }
 
+    const oldData = { ...program.dataValues };
+
     await program.destroy();
+
+    // AUDIT - DELETE
+    await auditLogs({
+      entity_type: "radio_program",
+      entity_id: oldData.id,
+      action: "delete",
+      changed_by: req.user.id,
+      changes: oldData,
+      description: "Radio Program deleted",
+    });
 
     res.status(200).json({ message: "Radio program deleted successfully." });
   } catch (error) {

@@ -6,6 +6,8 @@ const {
   deleteFromCpanel,
 } = require("../services/uploadToCpanel");
 const { ProgramCategory } = db;
+const auditLogs = require("../controllers/auditLogsController");
+const getDiff = require("../utils/getDiff");
 
 // Create Program Category
 exports.createProgramCategory = async (req, res) => {
@@ -38,6 +40,16 @@ exports.createProgramCategory = async (req, res) => {
       country,
       image_url,
       status: "in-active",
+    });
+
+    // AUDIT
+    await auditLogs({
+      entity_type: "Program Category",
+      entity_id: programCategory.id,
+      action: "create",
+      changed_by: req.user.id,
+      changes: programCategory.dataValues,
+      description: "Program Category created",
     });
 
     res.status(201).json({
@@ -135,8 +147,19 @@ exports.updateStatus = async (req, res) => {
         .json({ status: "error", message: "Program Category not found" });
     }
 
+    const oldData = { status: programCategory.status };
+
     programCategory.status = status;
     await programCategory.save();
+
+    await auditLogs({
+      entity_type: "Program Category",
+      entity_id: programCategory.id,
+      action: "update-status",
+      changed_by: req.user.id,
+      changes: getDiff(oldData, { status }),
+      description: "Program Category status updated",
+    });
 
     return res.status(200).json({
       status: "success",
@@ -166,6 +189,8 @@ exports.updateProgramCategory = async (req, res) => {
         .json({ status: "error", message: "Program Category not found" });
     }
 
+    const oldData = { ...programCategory.dataValues };
+
     if (image && image.path) {
       const serverPath = "programBanner/images";
       if (programCategory.image_url) {
@@ -192,6 +217,15 @@ exports.updateProgramCategory = async (req, res) => {
 
     await programCategory.save();
 
+    await auditLogs({
+      entity_type: "Program Category",
+      entity_id: programCategory.id,
+      action: "update",
+      changed_by: req.user.id,
+      changes: getDiff(oldData, programCategory.dataValues),
+      description: "Program Category updated",
+    });
+
     return res.status(200).json({
       status: "success",
       message: "Program Category updated successfully",
@@ -214,6 +248,8 @@ exports.deleteProgramCategory = async (req, res) => {
 
     const programCategory = await ProgramCategory.findByPk(id);
 
+    const oldData = { ...programCategory.dataValues };
+
     if (!programCategory) {
       return res
         .status(404)
@@ -221,6 +257,16 @@ exports.deleteProgramCategory = async (req, res) => {
     }
 
     await programCategory.destroy();
+
+    await auditLogs({
+      entity_type: "Program Category",
+      entity_id: oldData.id,
+      action: "delete",
+      changed_by: req.user.id,
+      changes: oldData,
+      description: "Program Category deleted",
+    });
+
     return res.status(200).json({
       status: "success",
       message: "Program Category deleted successfully",
@@ -249,6 +295,8 @@ exports.updateCategoryImage = async (req, res) => {
       return res.status(404).json({ message: "Program not found" });
     }
 
+    const oldData = { image_url: program.image_url };
+
     const serverPath = "programBanner/images";
 
     if (program.image_url) {
@@ -268,6 +316,15 @@ exports.updateCategoryImage = async (req, res) => {
 
     program.image_url = image_url;
     await program.save();
+
+    await auditLogs({
+      entity_type: "Program Category",
+      entity_id: program.id,
+      action: "update-image",
+      changed_by: req.user.id,
+      changes: getDiff(oldData, { image_url }),
+      description: "Program Category image updated",
+    });
 
     if (fs.existsSync(image.path)) fs.unlinkSync(image.path);
 

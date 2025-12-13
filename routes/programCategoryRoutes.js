@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router();
 const programCategoryController = require("../controllers/programCategoryController");
 const uploadImage = require("../middlewares/uploadImages");
+const { authenticateToken } = require("../middlewares/authMiddleware");
 
+router.use(authenticateToken);
 router.get("/", programCategoryController.getAllProgramCategories);
 
 router.get("/:id", programCategoryController.getProgramCategoryById);

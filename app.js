@@ -46,6 +46,7 @@ app.use("/api/payments", require("./routes/paymentRoutes"));
 app.use("/api/memberPackage", require("./routes/memberPackageRoutes"));
 app.use("/api/transactions", require("./routes/transactionRoutes"));
 app.use("/api/banners", require("./routes/bannerRoutes"));
+app.use("/api/audit-log", require("./routes/auditLogsRoutes"));
 
 //podcasts
 app.use("/api/podcasts", require("./routes/podcastRoutes"));
