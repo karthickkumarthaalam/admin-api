@@ -30,7 +30,7 @@ module.exports = {
       changed_by: {
         type: Sequelize.INTEGER,
         references: {
-          model: "users",
+          model: "Users",
           key: "id",
         },
         onDelete: "SET NULL",
