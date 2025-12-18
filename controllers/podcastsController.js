@@ -55,7 +55,10 @@ exports.createPodcast = async (req, res) => {
         fs.unlinkSync(imageFile.path);
       }
     }
-
+    const rj = await SystemUsers.findByPk(rj_id);
+    if (!rj) {
+      return res.status(404).json({ status: "error", message: "Invalid RJ" });
+    }
     const slug = slugify(title);
 
     const newPodcast = await Podcast.create({
