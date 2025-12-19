@@ -445,6 +445,17 @@ exports.getAllPodcasts = async (req, res) => {
       where.status = req.query.status;
     }
 
+    if (req.query.category_id) {
+      where.category_id = req.query.category_id;
+    }
+
+    if (req.query.not_category_id) {
+      where[Op.or] = [
+        { category_id: { [Op.not]: req.query.not_category_id } },
+        { category_id: { [Op.is]: null } },
+      ];
+    }
+
     if (req.query.search) {
       const searchQuery = `%${req.query.search}%`;
       where[Op.or] = [
