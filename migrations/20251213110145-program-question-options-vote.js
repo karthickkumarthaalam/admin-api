@@ -17,7 +17,7 @@ module.exports = {
         type: Sequelize.INTEGER,
         allowNull: false,
         references: {
-          model: "radioprograms", // existing table
+          model: "RadioPrograms", // existing table
           key: "id",
         },
         onDelete: "CASCADE",
