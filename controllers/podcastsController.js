@@ -147,6 +147,7 @@ exports.uploadPodcastVideo = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Video updated successfully",
+      data: podcast,
     });
   } catch (error) {
     // cleanup temp file on failure
@@ -215,6 +216,7 @@ exports.uploadPodcastAudio = async (req, res) => {
       status: "success",
       message: "Audio uploaded",
       audio: audioUrl,
+      data: podcast,
     });
   } catch (error) {
     try {

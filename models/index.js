@@ -108,6 +108,14 @@ db.Notification = require("./notification")(sequelize, Sequelize);
 
 db.AuditLogs = require("./auditLogs")(sequelize, Sequelize);
 
+//Program Quiz
+db.ProgramQuestion = require("./programQuestion")(sequelize, Sequelize);
+db.ProgramQuestionOption = require("./programQuestionOption")(
+  sequelize,
+  Sequelize
+);
+db.ProgramQuestionVote = require("./programQuestionVote")(sequelize, Sequelize);
+
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);

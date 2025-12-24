@@ -63,6 +63,7 @@ app.use("/api/program-category", require("./routes/programCategoryRoutes"));
 app.use("/api/departments", require("./routes/departmentRoutes"));
 app.use("/api/system-user", require("./routes/systemUserRoutes"));
 app.use("/api/radio-program", require("./routes/radioProgramRoutes"));
+app.use("/api/program-question", require("./routes/programQuestionRoutes"));
 
 //Module Routes
 app.use("/api/modules", require("./routes/moduleRoutes"));
