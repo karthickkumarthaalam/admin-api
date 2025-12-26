@@ -30,13 +30,11 @@ exports.signup = async (req, res) => {
       acl: Array.isArray(acl) ? acl : [],
     });
 
-    res
-      .status(201)
-      .json({
-        message: "User Created Successfully",
-        userId: newUser.id,
-        acl: newUser.acl,
-      });
+    res.status(201).json({
+      message: "User Created Successfully",
+      userId: newUser.id,
+      acl: newUser.acl,
+    });
   } catch (error) {
     res.status(500).json({ message: "signup failed", error: error.message });
   }
@@ -121,6 +119,7 @@ exports.login = async (req, res) => {
         permissions: userPermissions,
         role: user.role,
         name: systemUser?.name || "Admin",
+        system_user_id: systemUser?.id || null,
       },
     });
   } catch (error) {
