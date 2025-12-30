@@ -60,6 +60,10 @@ exports.login = async (req, res) => {
       },
     });
 
+    if (systemUser && systemUser.status !== "active") {
+      return res.status(403).json({ message: "User account is inactive" });
+    }
+
     let userPermissions = [];
 
     if (systemUser) {

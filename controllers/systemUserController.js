@@ -318,6 +318,10 @@ exports.getAllSystemUsers = async (req, res) => {
       filterConditions.show_profile = req.query.show_profile === "true";
     }
 
+    if (req.query.status) {
+      filterConditions.status = req.query.status;
+    }
+
     if (req.query.department) {
       includeConditions[0].where = {
         department_name: { [Op.like]: `%${req.query.department}%` },

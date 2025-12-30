@@ -93,19 +93,24 @@ exports.getAllPayslips = async (req, res) => {
     const { role, id } = req.user;
     const { search, month } = req.query;
 
+    const showDeleted = req.query.show_deleted === "true";
+
+    if (showDeleted && role !== "admin") {
+      return res.status(403).json({
+        message: "Access denied",
+      });
+    }
+
     const whereCondition = {};
 
-    // Non-admin users see only their payslips
     if (role !== "admin") {
       whereCondition.created_by = id;
     }
 
-    // Month filter
     if (month) {
-      whereCondition.month = month; // expects format "YYYY-MM"
+      whereCondition.month = month;
     }
 
-    // Search filter: employee name, email, department name
     const searchCondition = search
       ? {
           [Op.or]: [
@@ -120,10 +125,19 @@ exports.getAllPayslips = async (req, res) => {
         }
       : {};
 
+    const deletedCondition = showDeleted
+      ? { deletedAt: { [Op.ne]: null } }
+      : { deletedAt: null };
+
     const result = await pagination(Payslip, {
       page,
       limit,
-      where: { ...whereCondition, ...searchCondition },
+      paranoid: !showDeleted,
+      where: {
+        ...whereCondition,
+        ...searchCondition,
+        ...deletedCondition,
+      },
       include: [
         {
           model: SystemUsers,
@@ -145,6 +159,7 @@ exports.getAllPayslips = async (req, res) => {
               attributes: ["id", "department_name"],
             },
           ],
+          paranoid: !showDeleted, // Important for included models
         },
         {
           model: Currency,
@@ -160,6 +175,7 @@ exports.getAllPayslips = async (req, res) => {
           model: PayslipItem,
           as: "items",
           include: [{ model: PayslipComponent, as: "component" }],
+          paranoid: !showDeleted, // Important for included models
         },
       ],
       order: [["createdAt", "DESC"]],

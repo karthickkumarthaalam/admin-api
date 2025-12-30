@@ -1,32 +1,38 @@
+module.exports = async (
+  model,
+  {
+    page = 1,
+    limit = 20,
+    where = {},
+    order = [["createdAt", "DESC"]],
+    include = [],
+    paranoid = true,
+  }
+) => {
+  try {
+    const offset = (page - 1) * limit;
 
+    const data = await model.findAndCountAll({
+      where,
+      include,
+      order,
+      offset,
+      limit,
+      paranoid,
+    });
 
-module.exports = async (model, { page = 1, limit = 20, where = {}, order = [['createdAt', 'DESC']], include = [] }) => {
+    const totalPages = Math.ceil(data.count / limit);
 
-    try {
-        const offset = (page - 1) * limit;
-
-        const data = await model.findAndCountAll({
-            where,
-            include,
-            order,
-            offset,
-            limit
-        });
-
-        const totalPages = Math.ceil(data.count / limit);
-
-        return {
-            data: data.rows,
-            pagination: {
-                totalRecords: data.count,
-                totalPages,
-                currentPage: page,
-                perPage: limit,
-            }
-        };
-
-    } catch (error) {
-        throw new Error(error.message);
-    }
-
+    return {
+      data: data.rows,
+      pagination: {
+        totalRecords: data.count,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+      },
+    };
+  } catch (error) {
+    throw new Error(error.message);
+  }
 };

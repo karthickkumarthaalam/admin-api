@@ -96,6 +96,14 @@ exports.getAllExperience = async (req, res) => {
     const { role, id } = req.user;
     const { search } = req.query;
 
+    const showDeleted = req.query.show_deleted === "true";
+
+    if (showDeleted && role !== "admin") {
+      return res.status(403).json({
+        message: "Access denied",
+      });
+    }
+
     const whereCondition = {};
 
     if (role !== "admin") {
@@ -116,10 +124,15 @@ exports.getAllExperience = async (req, res) => {
         }
       : {};
 
+    const deletedCondition = showDeleted
+      ? { deletedAt: { [Op.ne]: null } }
+      : { deletedAt: null };
+
     const result = await pagination(Experience, {
       page,
       limit,
-      where: { ...whereCondition, ...searchCondition },
+      paranoid: !showDeleted,
+      where: { ...whereCondition, ...searchCondition, ...deletedCondition },
       include: [
         {
           model: SystemUsers,
@@ -132,6 +145,7 @@ exports.getAllExperience = async (req, res) => {
               attributes: ["id", "department_name"],
             },
           ],
+          paranoid: !showDeleted,
         },
       ],
       order: [["createdAt", "DESC"]],

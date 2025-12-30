@@ -69,14 +69,14 @@ exports.createPodcast = async (req, res) => {
       title,
       slug,
       description,
-      status: status || "active",
+      status: status || "pending",
       tags,
       language,
       image_url: imageLink,
       audio_drive_file_link: null,
       duration: null,
       created_by: req.user.id,
-      category_id,
+      category_id: category_id || null,
     });
 
     res.status(201).json({
