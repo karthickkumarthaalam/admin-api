@@ -399,13 +399,6 @@ exports.updatePodcastStatus = async (req, res) => {
       });
     }
 
-    if (req.user.role !== "admin") {
-      return res.status(403).json({
-        status: "error",
-        message: "Only admin can update status",
-      });
-    }
-
     // ✅ Lookup admin using user_id (token shared as req.user.id)
     const statusUpdater = await SystemUsers.findOne({
       where: {

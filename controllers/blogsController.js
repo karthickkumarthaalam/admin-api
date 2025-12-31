@@ -261,12 +261,6 @@ exports.updateBlogStatus = async (req, res) => {
         .json({ status: "error", message: "Invalid status" });
     }
 
-    if (req.user.role !== "admin") {
-      return res
-        .status(403)
-        .json({ status: "error", message: "Only admin can update status" });
-    }
-
     const statusUpdater = await SystemUsers.findOne({
       where: { user_id: req.user.id },
       attributes: ["name"],
