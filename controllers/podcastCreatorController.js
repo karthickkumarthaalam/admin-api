@@ -28,6 +28,7 @@ exports.createPodcastCreator = async (req, res) => {
       "email",
       "phone",
       "gender",
+      "address1",
       "country",
       "state",
       "city",
@@ -60,7 +61,7 @@ exports.createPodcastCreator = async (req, res) => {
     if (profile?.path) {
       profileLink = await uploadToCpanel(
         profile.path,
-        "PodcastCreator/profile",
+        "podcastCreator/profile",
         profile.originalname
       );
       if (fs.existsSync(profile.path)) {
@@ -72,7 +73,7 @@ exports.createPodcastCreator = async (req, res) => {
     if (idProof?.path) {
       idProofLink = await uploadToCpanel(
         idProof.path,
-        "PodcastCreator/id-proof",
+        "podcastCreator/id-proof",
         idProof.originalname
       );
       if (fs.existsSync(idProof.path)) {
@@ -102,6 +103,8 @@ exports.createPodcastCreator = async (req, res) => {
       date_of_birth: req.body.date_of_birth,
       bio: req.body.bio || null,
       profile: profileLink,
+      address1: req.body.address1,
+      address2: req.body.address2 || null,
       country: req.body.country,
       state: req.body.state,
       city: req.body.city,
@@ -180,6 +183,7 @@ exports.listPodcastCreators = async (req, res) => {
       pagination: result.pagination,
     });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       message: "Failed to list creators",
       error: error.message,
@@ -211,6 +215,15 @@ exports.updateCreatorStatus = async (req, res) => {
         message: "Rejection reason is required when status is rejected",
       });
     }
+    const verifiedBy = req.user?.email === "admin" ? "Admin" : req.user?.email;
+
+    if (status === "pending") {
+      await creator.update({
+        status,
+        verified_by: null,
+        verified_at: null,
+      });
+    }
 
     if (status === "approved") {
       const tempPassword = crypto.randomInt(10000000, 99999999).toString();
@@ -219,7 +232,7 @@ exports.updateCreatorStatus = async (req, res) => {
       await creator.update({
         status,
         password: hashedPassword,
-        verified_by: req.user?.id || null,
+        verified_by: verifiedBy || null,
         verified_at: new Date(),
         rejection_reason: null,
       });
@@ -231,7 +244,7 @@ exports.updateCreatorStatus = async (req, res) => {
       await creator.update({
         status,
         rejection_reason,
-        verified_by: req.user?.id || null,
+        verified_by: verifiedBy || null,
         verified_at: new Date(),
       });
 
@@ -266,12 +279,13 @@ exports.loginPodcastCreator = async (req, res) => {
     const creator = await PodcastCreator.findOne({
       where: {
         email: username,
+        status: "approved",
       },
     });
 
     if (!creator) {
       return res.status(404).json({
-        message: "Creator with this email not found",
+        message: "Creator with this email not found OR status not approved",
       });
     }
 
@@ -289,9 +303,16 @@ exports.loginPodcastCreator = async (req, res) => {
       { expiresIn: "1d" }
     );
 
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "None" : "Lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
     res.status(200).json({
       message: "Login Successful",
-      token: token,
+      data: creator,
     });
   } catch (error) {
     return res.status(500).json({
@@ -390,7 +411,7 @@ exports.forgotPassword = async (req, res) => {
   }
 };
 
-exports.verifyOtp = async (req, res) => {
+exports.resetPassword = async (req, res) => {
   try {
     const { email, otp, newPassword, confirmPassword } = req.body;
 

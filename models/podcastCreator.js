@@ -38,6 +38,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      address1: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      address2: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       country: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -80,12 +88,8 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
       verified_by: {
-        type: DataTypes.INTEGER,
-        references: {
-          model: "system_users",
-          key: "id",
-        },
-        onDelete: "SET NULL",
+        type: DataTypes.STRING,
+        allowNull: true,
       },
       verified_at: {
         type: DataTypes.DATE,

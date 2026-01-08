@@ -134,6 +134,9 @@ app.use("/api/rj-details", require("./routes/rjDetailsRoutes"));
 app.use("/api/blogs-category", require("./routes/blogsCategoryRoutes"));
 app.use("/api/blogs", require("./routes/blogsRoutes"));
 
+//Podcast Creator
+app.use("/api/creator", require("./routes/podcastCreatorRoutes"));
+
 const io = new Server(server, {
   cors: {
     origin: (origin, callback) => {
