@@ -35,6 +35,14 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+      country: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      country_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "program_question_votes",
@@ -47,6 +55,9 @@ module.exports = (sequelize, DataTypes) => {
         },
         {
           fields: ["program_question_option_id"],
+        },
+        {
+          fields: ["country"],
         },
       ],
     }

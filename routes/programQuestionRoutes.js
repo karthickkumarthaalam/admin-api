@@ -12,6 +12,7 @@ router.get(
 
 router.post("/vote", programQuestion.voteForQuestion);
 router.get("/results/:question_id", programQuestion.getQuestionResults);
+router.post("/feedback/:question_id", programQuestion.postFeedback);
 
 router.put("/:id", programQuestion.updateProgramQuestion);
 router.patch("/:id/status", programQuestion.updateStatus);

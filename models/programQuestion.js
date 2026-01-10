@@ -41,6 +41,23 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.ENUM("active", "in-active"),
         defaultValue: "active",
       },
+
+      enable_feedback: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
+      },
+
+      enable_whatsapp: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+        allowNull: false,
+      },
+
+      whatsapp_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "program_questions",
@@ -58,6 +75,11 @@ module.exports = (sequelize, DataTypes) => {
     ProgramQuestion.hasMany(models.ProgramQuestionOption, {
       foreignKey: "program_question_id",
       as: "options",
+    });
+
+    ProgramQuestion.hasMany(models.ProgramQuestionFeedback, {
+      foreignKey: "program_question_id",
+      as: "feedbacks",
     });
   };
 

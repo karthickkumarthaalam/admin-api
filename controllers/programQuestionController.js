@@ -2,11 +2,12 @@ const db = require("../models");
 const { Op, Sequelize } = require("sequelize");
 const moment = require("moment");
 const getClientIp = require("../utils/getClientIp");
+const { getCountryByIP } = require("../utils/ipGeolocation");
 const {
   ProgramQuestion,
   ProgramQuestionOption,
   ProgramQuestionVote,
-  RadioProgram,
+  ProgramQuestionFeedback,
 } = db;
 
 exports.createProgramQuesiton = async (req, res) => {
@@ -18,6 +19,9 @@ exports.createProgramQuesiton = async (req, res) => {
       start_date,
       end_date,
       status = "inactive",
+      enable_feedback = false,
+      enable_whatsapp = false,
+      whatsapp_number,
       options = [],
     } = req.body;
 
@@ -48,6 +52,9 @@ exports.createProgramQuesiton = async (req, res) => {
       status,
       start_date,
       end_date,
+      enable_feedback,
+      enable_whatsapp,
+      whatsapp_number,
     });
 
     const optionPayload = options.map((opt) => ({
@@ -72,7 +79,9 @@ exports.getProgramQuestions = async (req, res) => {
     const { radio_program_id } = req.params;
 
     if (!radio_program_id) {
-      return res.status(400).json({ message: "radio_program_id is required" });
+      return res.status(400).json({
+        message: "radio_program_id is required",
+      });
     }
 
     const questions = await ProgramQuestion.findAll({
@@ -88,18 +97,157 @@ exports.getProgramQuestions = async (req, res) => {
       ],
       order: [
         ["start_date", "ASC"],
-        ["createdAt", "ASC"],
+        ["createdAt", "DESC"],
       ],
     });
 
+    if (questions.length === 0) {
+      return res.json({
+        count: 0,
+        data: [],
+      });
+    }
+
+    const questionIds = questions.map((q) => q.id);
+    const optionsIds = questions.flatMap((q) =>
+      q.options.map((option) => option.id)
+    );
+
+    // Get vote counts with country breakdown
+    const voteCounts = await ProgramQuestionVote.findAll({
+      where: {
+        program_question_option_id: optionsIds,
+      },
+      attributes: [
+        "program_question_option_id",
+        [Sequelize.fn("COUNT", Sequelize.col("id")), "vote_count"],
+      ],
+      group: ["program_question_option_id"],
+      raw: true,
+    });
+
+    // Get country breakdown for votes
+    const voteCountries = await ProgramQuestionVote.findAll({
+      where: {
+        program_question_option_id: optionsIds,
+      },
+      attributes: [
+        "program_question_option_id",
+        "country",
+        "country_name",
+        [Sequelize.fn("COUNT", Sequelize.col("id")), "country_count"],
+      ],
+      group: ["program_question_option_id", "country", "country_name"],
+      raw: true,
+    });
+
+    // Get feedback with country data
+    const feedbacks = await ProgramQuestionFeedback.findAll({
+      where: {
+        program_question_id: questionIds,
+      },
+      attributes: [
+        "id",
+        "answer_text",
+        "ip_address",
+        "country",
+        "country_name",
+        "createdAt",
+        "program_question_id",
+      ],
+      order: [["createdAt", "DESC"]],
+    });
+
+    // Organize country data for votes
+    const voteCountryMap = {};
+    voteCountries.forEach((item) => {
+      const optionId = item.program_question_option_id;
+      if (!voteCountryMap[optionId]) {
+        voteCountryMap[optionId] = [];
+      }
+      voteCountryMap[optionId].push({
+        country: item.country,
+        country_name: item.country_name,
+        count: parseInt(item.country_count || 0),
+      });
+    });
+
+    const voteCountMap = {};
+    voteCounts.forEach((item) => {
+      voteCountMap[item.program_question_option_id] = parseInt(item.vote_count);
+    });
+
+    const feedbackCounts = await ProgramQuestionFeedback.findAll({
+      where: {
+        program_question_id: questionIds,
+      },
+      attributes: [
+        "program_question_id",
+        [Sequelize.fn("COUNT", Sequelize.col("id")), "feedback_count"],
+      ],
+      group: ["program_question_id"],
+      raw: true,
+    });
+
+    const feedbackCountMap = {};
+    feedbackCounts.forEach((item) => {
+      feedbackCountMap[item.program_question_id] = parseInt(
+        item.feedback_count
+      );
+    });
+
+    const feedbacksQuestion = {};
+    feedbacks.forEach((feedback) => {
+      const questionId = feedback.program_question_id;
+
+      if (!feedbacksQuestion[questionId]) {
+        feedbacksQuestion[questionId] = [];
+      }
+
+      if (feedbacksQuestion[questionId]) {
+        feedbacksQuestion[questionId].push(feedback.toJSON());
+      }
+    });
+
+    const questionsWithDetails = questions.map((question) => {
+      const questionJSON = question.toJSON();
+
+      let totalVotes = 0;
+      const optionsWithPercentage = questionJSON.options.map((option) => {
+        const voteCount = voteCountMap[option.id] || 0;
+        totalVotes += voteCount;
+
+        return {
+          ...option,
+          vote_count: voteCount,
+          country_breakdown: voteCountryMap[option.id] || [], // Add country breakdown
+        };
+      });
+
+      optionsWithPercentage.forEach((option) => {
+        option.percentage =
+          totalVotes > 0
+            ? ((option.vote_count / totalVotes) * 100).toFixed(2)
+            : 0;
+      });
+
+      return {
+        ...questionJSON,
+        options: optionsWithPercentage,
+        total_votes: totalVotes,
+        feedback_count: feedbackCountMap[question.id] || 0,
+        feedbacks: feedbacksQuestion[question.id] || [],
+      };
+    });
+
     return res.json({
-      count: questions.length,
-      data: questions,
+      count: questionsWithDetails.length,
+      data: questionsWithDetails,
     });
   } catch (error) {
-    console.error("List Program Questions Error:", error);
-    return res.status(500).json({
-      message: "Failed to fetch program questions",
+    console.error("Get questions error:", error);
+    res.status(500).json({
+      message: "Failed to fetch program Questions",
     });
   }
 };
@@ -159,6 +307,8 @@ exports.voteForQuestion = async (req, res) => {
     const ipAddress = getClientIp(req);
     const user_agent = req.headers["user-agent"] || null;
 
+    const { country, country_name } = await getCountryByIP(ipAddress);
+
     const question = await ProgramQuestion.findOne({
       where: {
         id: question_id,
@@ -196,6 +346,8 @@ exports.voteForQuestion = async (req, res) => {
       program_question_option_id: option_id,
       ip_address: ipAddress,
       user_agent,
+      country,
+      country_name,
     });
 
     return res.status(201).json({
@@ -210,6 +362,67 @@ exports.voteForQuestion = async (req, res) => {
 
     return res.status(500).json({
       message: "Failed to submit vote",
+    });
+  }
+};
+
+exports.postFeedback = async (req, res) => {
+  try {
+    const { question_id } = req.params;
+    const { answer_text } = req.body;
+
+    if (!question_id) {
+      return res.status(400).json({ message: "question_id is required" });
+    }
+
+    if (!answer_text || answer_text.trim().length === 0) {
+      return res.status(400).json({ message: "Feedback cannot be empty" });
+    }
+
+    const question = await ProgramQuestion.findOne({
+      where: { id: question_id, status: "active" },
+    });
+
+    if (!question) {
+      return res
+        .status(404)
+        .json({ message: "Question not found or inactive" });
+    }
+
+    const ip_address = getClientIp(req);
+    const user_agent = req.headers["user-agent"] || null;
+
+    const { country, country_name } = await getCountryByIP(ip_address);
+
+    const existing = await ProgramQuestionFeedback.findOne({
+      where: {
+        program_question_id: question_id,
+        ip_address,
+      },
+    });
+
+    if (existing) {
+      return res.status(409).json({
+        message: "You have already submitted feedback for this question",
+      });
+    }
+
+    await ProgramQuestionFeedback.create({
+      program_question_id: question_id,
+      answer_text,
+      ip_address,
+      user_agent,
+      country,
+      country_name,
+    });
+
+    return res.status(201).json({
+      message: "Feedback submitted successfully",
+    });
+  } catch (error) {
+    console.error("Feedback Error:", error);
+    return res.status(500).json({
+      message: "Failed to submit feedback",
     });
   }
 };
@@ -343,6 +556,9 @@ exports.updateProgramQuestion = async (req, res) => {
     end_date,
     status,
     options = [],
+    enable_feedback = false,
+    enable_whatsapp = false,
+    whatsapp_number,
   } = req.body;
 
   const t = await db.sequelize.transaction();
@@ -358,7 +574,16 @@ exports.updateProgramQuestion = async (req, res) => {
     }
 
     await programQuestion.update(
-      { question, question_type, start_date, end_date, status },
+      {
+        question,
+        question_type,
+        start_date,
+        end_date,
+        status,
+        enable_feedback,
+        enable_whatsapp,
+        whatsapp_number,
+      },
       { transaction: t }
     );
 
@@ -428,7 +653,6 @@ exports.updateProgramQuestion = async (req, res) => {
       message: "Question updated successfully",
     });
   } catch (error) {
-    console.log(error);
     await t.rollback();
     return res.status(500).json({
       message: "Failed to update questions",

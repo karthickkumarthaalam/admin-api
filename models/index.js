@@ -115,6 +115,10 @@ db.ProgramQuestionOption = require("./programQuestionOption")(
   Sequelize
 );
 db.ProgramQuestionVote = require("./programQuestionVote")(sequelize, Sequelize);
+db.ProgramQuestionFeedback = require("./programQuestionFeedback")(
+  sequelize,
+  Sequelize
+);
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
