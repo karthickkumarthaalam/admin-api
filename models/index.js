@@ -12,7 +12,7 @@ const sequelize = new Sequelize(
     host: dbConfig.host,
     dialect: dbConfig.dialect,
     logging: false,
-  }
+  },
 );
 
 sequelize
@@ -42,7 +42,7 @@ db.Agreement = require("./agreement")(sequelize, Sequelize);
 db.PasswordManager = require("./passwordManager")(sequelize, Sequelize);
 db.PasswordManagerAccess = require("./passwordManagerAccess")(
   sequelize,
-  Sequelize
+  Sequelize,
 );
 db.RadioStation = require("./radioStation")(sequelize, Sequelize);
 db.ProgramCategory = require("./programCategory")(sequelize, Sequelize);
@@ -62,7 +62,7 @@ db.BudgetItem = require("./budgetItem")(sequelize, Sequelize);
 db.BudgetTaxes = require("./budgetTaxes")(sequelize, Sequelize);
 db.BudgetTaxApplication = require("./budgetTaxApplication")(
   sequelize,
-  Sequelize
+  Sequelize,
 );
 db.BudgetMerchant = require("./budgetMerchant")(sequelize, Sequelize);
 db.BudgetUnits = require("./budgetUnits")(sequelize, Sequelize);
@@ -102,6 +102,9 @@ db.BlogsCategory = require("./blogsCategory")(sequelize, Sequelize);
 //Podcast creator
 db.PodcastCategory = require("./podcastCategory")(sequelize, Sequelize);
 db.PodcastCreator = require("./podcastCreator")(sequelize, Sequelize);
+db.PodcastAnalytics = require("./podcastAnalytics")(sequelize, Sequelize);
+db.PodcastView = require("./podcastViews")(sequelize, Sequelize);
+db.PodcastShare = require("./podcastShare")(sequelize, Sequelize);
 
 //Notification
 db.Notification = require("./notification")(sequelize, Sequelize);
@@ -112,12 +115,12 @@ db.AuditLogs = require("./auditLogs")(sequelize, Sequelize);
 db.ProgramQuestion = require("./programQuestion")(sequelize, Sequelize);
 db.ProgramQuestionOption = require("./programQuestionOption")(
   sequelize,
-  Sequelize
+  Sequelize,
 );
 db.ProgramQuestionVote = require("./programQuestionVote")(sequelize, Sequelize);
 db.ProgramQuestionFeedback = require("./programQuestionFeedback")(
   sequelize,
-  Sequelize
+  Sequelize,
 );
 
 Object.keys(db).forEach((modelName) => {

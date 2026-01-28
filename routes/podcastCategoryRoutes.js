@@ -3,7 +3,14 @@ const router = express.Router();
 const podcastCategoryController = require("../controllers/podcastCategoryController");
 const podcastUpload = require("../middlewares/uploadPodcastFiles");
 
-router.get("/", podcastCategoryController.getAllCategory);
+router.get(
+  "/",
+  (req, res, next) => {
+    req.isAuthenticated = true;
+    next();
+  },
+  podcastCategoryController.getAllCategory
+);
 router.post(
   "/",
   podcastUpload.fields([{ name: "image", maxCount: 1 }]),

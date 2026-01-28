@@ -20,6 +20,29 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
+      created_by_type: {
+        type: DataTypes.ENUM("system", "creator"),
+        defaultValue: "system",
+        allowNull: false,
+      },
+      system_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: "system_users",
+          key: "id",
+        },
+        onDelete: "SET NULL",
+      },
+      podcast_creator_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: "podcast_creator",
+          key: "id",
+        },
+        onDelete: "SET NULL",
+      },
     },
     {
       tableName: "podcast_category",
@@ -32,6 +55,14 @@ module.exports = (sequelize, DataTypes) => {
     PodcastCategory.hasMany(models.Podcast, {
       foreignKey: "category_id",
       as: "podcasts",
+    });
+    PodcastCategory.belongsTo(models.SystemUsers, {
+      foreignKey: "system_user_id",
+      as: "systemCreator",
+    });
+    PodcastCategory.belongsTo(models.PodcastCreator, {
+      foreignKey: "podcast_creator_id",
+      as: "creatorProfile",
     });
   };
 

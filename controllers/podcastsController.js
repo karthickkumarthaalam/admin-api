@@ -1,5 +1,5 @@
 const db = require("../models");
-const { Podcast, PodcastComment, Members, SystemUsers } = db;
+const { Podcast, PodcastComment, Members, SystemUsers, PodcastCreator } = db;
 const fs = require("fs");
 const { Op, literal } = require("sequelize");
 const { getAudioDurationInSeconds } = require("get-audio-duration");
@@ -12,7 +12,6 @@ const {
 
 const r2upload = require("../services/uploadToR2");
 const slugify = require("../utils/slugify");
-const category = require("../models/category");
 
 function extractR2KeyFromUrl(url, type = "audio") {
   if (!url) return null;
@@ -38,6 +37,9 @@ exports.createPodcast = async (req, res) => {
       language,
       tags,
       category_id,
+      created_by_type,
+      system_user_id,
+      podcast_creator_id,
     } = req.body;
 
     let imageLink = null;
@@ -47,24 +49,58 @@ exports.createPodcast = async (req, res) => {
       imageLink = await uploadToCpanel(
         imageFile.path,
         "podcasts/image",
-        imageFile.originalname
+        imageFile.originalname,
       );
 
-      // Remove local temp file
       if (fs.existsSync(imageFile.path)) {
         fs.unlinkSync(imageFile.path);
       }
     }
-    const rj = await SystemUsers.findByPk(rj_id);
-    if (!rj) {
-      return res.status(404).json({ status: "error", message: "Invalid RJ" });
-    }
+
     const slug = slugify(title);
 
-    const newPodcast = await Podcast.create({
+    let rjName = null;
+
+    if (rj_id) {
+      const rj = await SystemUsers.findByPk(rj_id);
+
+      if (!rj) {
+        return res.status(404).json({
+          status: "error",
+          message: "Invalid RJ",
+        });
+      }
+
+      rjName = rj.name;
+    } else {
+      if (created_by_type === "creator" && podcast_creator_id) {
+        const creator = await PodcastCreator.findByPk(podcast_creator_id);
+        if (creator) rjName = creator.name;
+      }
+
+      if (created_by_type === "system" && system_user_id) {
+        const admin = await SystemUsers.findOne({
+          where: { id: system_user_id },
+        });
+        if (admin) rjName = admin.name;
+      }
+    }
+
+    // If no rj_id and no creator/admin name found → fail
+    if (!rjName) {
+      return res.status(400).json({
+        status: "error",
+        message: "RJ or valid creator/admin must be provided",
+      });
+    }
+
+    // -------------------------------
+    // 2️⃣ Build Podcast Payload
+    // -------------------------------
+    const podcastPayload = {
       date,
-      rj_id,
-      rjname: rj.name,
+      rj_id: rj_id || null,
+      rjname: rjName,
       content,
       title,
       slug,
@@ -75,9 +111,26 @@ exports.createPodcast = async (req, res) => {
       image_url: imageLink,
       audio_drive_file_link: null,
       duration: null,
-      created_by: req.user.id,
       category_id: category_id || null,
-    });
+      created_by_type: created_by_type || "system",
+      created_by: null,
+      system_user_id: null,
+      podcast_creator_id: null,
+    };
+
+    if (created_by_type === "system" && system_user_id) {
+      podcastPayload.system_user_id = Number(system_user_id);
+      podcastPayload.created_by = Number(system_user_id);
+    }
+
+    if (created_by_type === "creator" && podcast_creator_id) {
+      podcastPayload.podcast_creator_id = Number(podcast_creator_id);
+      podcastPayload.created_by = null;
+    }
+
+    const newPodcast = await Podcast.create(podcastPayload);
+
+    await db.PodcastAnalytics.create({ podcast_id: newPodcast.id });
 
     res.status(201).json({
       status: "success",
@@ -122,7 +175,7 @@ exports.uploadPodcastVideo = async (req, res) => {
       } catch (deleteError) {
         console.error(
           "Warning: failed to delete old video from R2:",
-          deleteError.message
+          deleteError.message,
         );
       }
     }
@@ -133,7 +186,7 @@ exports.uploadPodcastVideo = async (req, res) => {
     const videoUrl = await r2upload.uploadToR2(
       videoFile.path,
       keyFolder,
-      videoFile.originalname
+      videoFile.originalname,
     );
 
     // update DB
@@ -184,7 +237,7 @@ exports.uploadPodcastAudio = async (req, res) => {
       } catch (err) {
         console.error(
           "Warning: failed to delete old audio from R2:",
-          err.message
+          err.message,
         );
       }
     }
@@ -193,7 +246,7 @@ exports.uploadPodcastAudio = async (req, res) => {
     const audioUrl = await r2upload.uploadToR2(
       audioFile.path,
       keyFolder,
-      audioFile.originalname
+      audioFile.originalname,
     );
     let formattedDuration = null;
     try {
@@ -245,7 +298,7 @@ exports.deletePodcastVideo = async (req, res) => {
       } catch (deleteError) {
         console.error(
           "Warning: failed to delete video from R2:",
-          deleteError.message
+          deleteError.message,
         );
       }
     }
@@ -339,7 +392,7 @@ exports.updatePodcast = async (req, res) => {
       imageLink = await uploadToCpanel(
         imageFile.path,
         "podcasts/image",
-        imageFile.originalname
+        imageFile.originalname,
       );
 
       // Remove temp local uploaded file
@@ -463,20 +516,28 @@ exports.getAllPodcasts = async (req, res) => {
       where = {
         ...where,
         [Op.and]: literal(
-          `JSON_CONTAINS(language, '["${req.query.language}"]')`
+          `JSON_CONTAINS(language, '["${req.query.language}"]')`,
         ),
       };
     }
 
-    if (req.isAuthenticated && req.user && req.user.role !== "admin") {
-      const systemUser = await SystemUsers.findOne({
-        where: {
-          user_id: req.user.id,
-        },
-      });
+    if (req.isAuthenticated) {
+      const requesterType = req.query.type;
+      const requesterId = parseInt(req.query.user_id) || null;
+      const adminView = req.query.view;
 
-      if (systemUser) {
-        where.rjname = systemUser.name;
+      if (requesterType === "admin") {
+        if (adminView === "system") {
+          where.system_user_id = { [Op.not]: null };
+        }
+
+        if (adminView === "creator") {
+          where.podcast_creator_id = { [Op.not]: null };
+        }
+      } else if (requesterType === "system" && requesterId) {
+        where.system_user_id = requesterId;
+      } else if (requesterType === "creator" && requesterId) {
+        where.podcast_creator_id = requesterId;
       }
     }
 
@@ -536,7 +597,7 @@ exports.getPodcastById = async (req, res) => {
       {
         replacements: { podcastId: req.params.id },
         type: db.Sequelize.QueryTypes.SELECT,
-      }
+      },
     );
 
     const reactionSummary = {};
@@ -554,7 +615,7 @@ exports.getPodcastById = async (req, res) => {
       {
         replacements: { podcastId: req.params.id },
         type: db.sequelize.QueryTypes.SELECT,
-      }
+      },
     );
 
     const next = await db.sequelize.query(
@@ -565,7 +626,7 @@ exports.getPodcastById = async (req, res) => {
       {
         replacements: { podcastId: req.params.id },
         type: db.Sequelize.QueryTypes.SELECT,
-      }
+      },
     );
 
     res.status(200).json({
@@ -603,7 +664,7 @@ exports.getPodcastReactions = async (req, res) => {
     `);
 
     const [[{ total }]] = await db.sequelize.query(
-      `SELECT COUNT(*) as total FROM podcasts`
+      `SELECT COUNT(*) as total FROM podcasts`,
     );
 
     res.status(200).json({

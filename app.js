@@ -25,7 +25,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-  })
+  }),
 );
 
 const webhookRoute = require("./routes/webhookRoutes");
@@ -104,7 +104,7 @@ app.use("/api/festival-gif", require("./routes/festivalGifRoutes"));
 app.use("/api/visit", require("./routes/visitorsRoutes"));
 app.use(
   "/api/previous-employment",
-  require("./routes/previousEmploymentRoutes")
+  require("./routes/previousEmploymentRoutes"),
 );
 
 //employee-document-routes
@@ -136,6 +136,7 @@ app.use("/api/blogs", require("./routes/blogsRoutes"));
 
 //Podcast Creator
 app.use("/api/creator", require("./routes/podcastCreatorRoutes"));
+app.use("/api/podcast-analytics", require("./routes/podcastAnalyticsRoutes"));
 
 const io = new Server(server, {
   cors: {

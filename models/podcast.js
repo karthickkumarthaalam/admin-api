@@ -121,18 +121,44 @@ module.exports = (sequelize, DataTypes) => {
       },
       created_by: {
         type: DataTypes.INTEGER,
+        allowNull: true,
         references: {
           model: "Users",
           key: "id",
         },
         onDelete: "CASCADE",
       },
+      created_by_type: {
+        type: DataTypes.ENUM("system", "creator"),
+        defaultValue: "system",
+        allowNull: false,
+      },
+
+      system_user_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: "system_users",
+          key: "id",
+        },
+        onDelete: "SET NULL",
+      },
+
+      podcast_creator_id: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        references: {
+          model: "podcast_creator",
+          key: "id",
+        },
+        onDelete: "SET NULL",
+      },
     },
     {
       tableName: "podcasts",
       timestamps: false,
       paranoid: true,
-    }
+    },
   );
 
   Podcast.associate = (models) => {
@@ -147,9 +173,15 @@ module.exports = (sequelize, DataTypes) => {
     Podcast.hasMany(models.PodcastComment, { foreignKey: "podcast_id" });
     Podcast.hasMany(models.PodcastReaction, { foreignKey: "podcast_id" });
     Podcast.belongsTo(models.SystemUsers, {
-      foreignKey: "created_by",
-      targetKey: "user_id",
-      as: "creator",
+      foreignKey: "system_user_id",
+      as: "systemCreator",
+    });
+    Podcast.belongsTo(models.PodcastCreator, {
+      foreignKey: "podcast_creator_id",
+      as: "creatorProfile",
+    });
+    Podcast.hasOne(models.PodcastAnalytics, {
+      foreignKey: "podcast_id",
     });
   };
 

@@ -1,38 +1,51 @@
 const db = require("../models");
 const { Op } = require("sequelize");
-const { PodcastReaction, Members } = db;
+const {
+  PodcastReaction,
+  Members,
+  PodcastView,
+  PodcastAnalytics,
+  PodcastShare,
+} = db;
+const getClientIp = require("../utils/getClientIp");
 
 exports.addorupdateReaction = async (req, res) => {
+  const t = await db.sequelize.transaction();
   try {
     const { podcast_id, member_id, guest_id, reaction } = req.body;
-    if (!podcast_id || !reaction) {
+
+    if (!podcast_id || reaction !== "like") {
+      await t.rollback();
       return res.status(400).json({
         status: "error",
-        message: "Podcast ID and reaction type are required",
+        message: "Valid podcast_id and 'like' reaction are required",
       });
     }
 
-    if (reaction !== "like") {
+    if (!member_id && !guest_id) {
+      await t.rollback();
       return res.status(400).json({
         status: "error",
-        message: "Only 'like' reactions are allowed",
+        message: "Either member_id or guest_id is required",
       });
     }
 
     const podcast = await db.Podcast.findByPk(podcast_id);
     if (!podcast) {
+      await t.rollback();
       return res.status(404).json({
         status: "error",
         message: "Podcast not found",
       });
     }
 
-    let member;
+    let member = null;
     if (member_id) {
       member = await db.Members.findOne({
         where: { member_id },
       });
       if (!member) {
+        await t.rollback();
         return res.status(404).json({
           status: "error",
           message: "Member not found",
@@ -40,50 +53,57 @@ exports.addorupdateReaction = async (req, res) => {
       }
     }
 
-    const whereCondition = { podcast_id, reaction: "like" };
+    const whereCondition = {
+      podcast_id,
+      reaction: "like",
+      ...(member ? { member_id: member.id } : { guest_id }),
+    };
 
-    if (member_id) {
-      whereCondition.member_id = member.id;
-    } else if (guest_id) {
-      whereCondition.guest_id = guest_id;
-    } else {
-      return res.status(400).json({
-        status: "error",
-        message: "Either member_id or guest_id is required",
-      });
-    }
-
-    // Check if user already liked this podcast
     const existingReaction = await PodcastReaction.findOne({
       where: whereCondition,
     });
+
     if (existingReaction) {
-      return res.status(400).json({
-        status: "error",
-        message: "You already liked this podcast",
+      await t.rollback();
+      return res.status(200).json({
+        status: "success",
         already_liked: true,
+        message: "You already liked this podcast",
       });
     }
 
-    // Create new reaction
-    await PodcastReaction.create({
-      podcast_id,
-      member_id: member?.id || null,
-      guest_id: guest_id || null,
-      reaction,
+    // Create reaction
+    await PodcastReaction.create(
+      {
+        podcast_id,
+        member_id: member?.id || null,
+        guest_id: guest_id || null,
+        reaction: "like",
+      },
+      { transaction: t },
+    );
+
+    // Increment analytics instead of recounting
+    await PodcastAnalytics.increment("like_count", {
+      where: { podcast_id },
+      transaction: t,
     });
 
-    // Get updated reaction count
-    const likeCount = await PodcastReaction.count({
-      where: { podcast_id, reaction: "like" },
+    await t.commit();
+
+    // Fetch updated count from analytics
+    const analytics = await PodcastAnalytics.findOne({
+      where: { podcast_id },
+      attributes: ["like_count"],
     });
 
-    res.status(200).json({
+    return res.status(200).json({
       status: "success",
       message: "Reaction added successfully",
-      like_count: likeCount,
+      like_count: analytics.like_count,
     });
   } catch (error) {
+    await t.rollback();
     res.status(500).json({
       status: "error",
       message: "Failed to add reaction",
@@ -106,7 +126,7 @@ exports.getReactionCountsByPodcastId = async (req, res) => {
       {
         replacements: { podcastId },
         type: db.Sequelize.QueryTypes.SELECT,
-      }
+      },
     );
 
     const reactionMap = {};
@@ -164,6 +184,170 @@ exports.getUserReaction = async (req, res) => {
       status: "error",
       message: "Server Error while fetching reactions",
       error: error.message,
+    });
+  }
+};
+
+exports.addPodcastView = async (req, res) => {
+  try {
+    const podcast_id = req.params.id;
+
+    const { member_id, guest_id } = req.body;
+
+    if (!podcast_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Podcast ID is required",
+      });
+    }
+
+    if (!member_id && !guest_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Either member_id or guest_id is required",
+      });
+    }
+
+    const podcast = await db.Podcast.findByPk(podcast_id);
+
+    if (!podcast) {
+      return res.status(404).json({
+        success: false,
+        message: "Podcast not found",
+      });
+    }
+
+    const COOLDOWN_MINUTES = 30;
+
+    const whereCondition = {
+      podcast_id,
+      viewed_at: {
+        [Op.gt]: new Date(Date.now() - COOLDOWN_MINUTES * 60 * 1000),
+      },
+    };
+
+    if (member_id) {
+      whereCondition.member_id = member_id;
+    } else {
+      whereCondition.guest_id = guest_id;
+    }
+
+    const alreadyViewed = await PodcastView.findOne({
+      where: whereCondition,
+    });
+
+    if (alreadyViewed) {
+      return res.status(200).json({
+        success: true,
+        counted: false,
+        message: "View already counted recently",
+      });
+    }
+
+    const ipAddress = getClientIp(req);
+
+    await PodcastView.create({
+      podcast_id,
+      member_id: member_id || null,
+      guest_id: guest_id || null,
+      ip_address: ipAddress,
+    });
+
+    await PodcastAnalytics.increment("play_count", {
+      where: { podcast_id },
+    });
+
+    return res.status(200).json({
+      success: true,
+      counted: true,
+      message: "Podcast view counted",
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Failed to count podcast view",
+    });
+  }
+};
+
+exports.addPodcastShare = async (req, res) => {
+  try {
+    const podcast_id = req.params.id;
+    const { member_id, guest_id, platform } = req.body;
+
+    if (!podcast_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Podcast ID is required",
+      });
+    }
+
+    if (!platform) {
+      return res.status(400).json({
+        success: false,
+        message: "Share platform is required",
+      });
+    }
+
+    if (!member_id && !guest_id) {
+      return res.status(400).json({
+        success: false,
+        message: "Either member_id or guest_id is required",
+      });
+    }
+
+    const podcast = await db.Podcast.findByPk(podcast_id);
+    if (!podcast) {
+      return res.status(404).json({
+        success: false,
+        message: "Podcast not found",
+      });
+    }
+
+    const whereCondition = {
+      podcast_id,
+      platform,
+    };
+
+    if (member_id) {
+      whereCondition.member_id = member_id;
+    } else {
+      whereCondition.guest_id = guest_id;
+    }
+
+    const alreadyShared = await PodcastShare.findOne({
+      where: whereCondition,
+    });
+
+    if (alreadyShared) {
+      return res.status(200).json({
+        success: true,
+        counted: false,
+        message: "Podcast already shared on this platform",
+      });
+    }
+
+    await PodcastShare.create({
+      podcast_id,
+      member_id: member_id || null,
+      guest_id: guest_id || null,
+      platform,
+    });
+
+    await PodcastAnalytics.increment("shares_count", {
+      where: { podcast_id },
+    });
+
+    return res.status(200).json({
+      success: true,
+      counted: true,
+      message: "Podcast shared successfully",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to share podcast",
     });
   }
 };

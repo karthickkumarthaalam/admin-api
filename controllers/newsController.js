@@ -48,7 +48,7 @@ exports.createNews = async (req, res) => {
       coverUrl = await uploadToCpanel(
         coverfile.path,
         remoteFolder,
-        coverfile.originalname
+        coverfile.originalname,
       );
 
       if (fs.existsSync(coverfile.path)) {
@@ -79,7 +79,7 @@ exports.createNews = async (req, res) => {
       },
       {
         returning: true,
-      }
+      },
     );
 
     res
@@ -118,7 +118,7 @@ exports.getAllNews = async (req, res) => {
           user_id: req.user.id,
         },
       });
-      whereCondition.published_by = systemUser.name;
+      whereCondition.published_by = systemUser?.name || "Admin";
     }
 
     if (req.query.search) {
@@ -216,7 +216,7 @@ exports.updateNews = async (req, res) => {
         coverUrl = await uploadToCpanel(
           coverfile.path,
           remoteFolder,
-          coverfile.originalname
+          coverfile.originalname,
         );
       }
 

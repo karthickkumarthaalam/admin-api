@@ -62,7 +62,7 @@ exports.createPodcastCreator = async (req, res) => {
       profileLink = await uploadToCpanel(
         profile.path,
         "podcastCreator/profile",
-        profile.originalname
+        profile.originalname,
       );
       if (fs.existsSync(profile.path)) {
         fs.unlinkSync(profile.path);
@@ -74,7 +74,7 @@ exports.createPodcastCreator = async (req, res) => {
       idProofLink = await uploadToCpanel(
         idProof.path,
         "podcastCreator/id-proof",
-        idProof.originalname
+        idProof.originalname,
       );
       if (fs.existsSync(idProof.path)) {
         fs.unlinkSync(idProof.path);
@@ -191,6 +191,20 @@ exports.listPodcastCreators = async (req, res) => {
   }
 };
 
+exports.listCreators = async (req, res) => {
+  try {
+    const creators = await PodcastCreator.findAll({
+      attributes: ["id", "name"],
+    });
+
+    res.status(200).json({
+      data: creators,
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Failed to list creators" });
+  }
+};
+
 exports.updateCreatorStatus = async (req, res) => {
   try {
     const { id } = req.params;
@@ -251,7 +265,7 @@ exports.updateCreatorStatus = async (req, res) => {
       await creatorRejectionTemplate(
         creator.name,
         creator.email,
-        rejection_reason
+        rejection_reason,
       );
     }
 
@@ -298,9 +312,9 @@ exports.loginPodcastCreator = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: creator.id, email: creator.email },
+      { id: creator.id, email: creator.email, name: creator.name },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     res.cookie("token", token, {
@@ -342,7 +356,7 @@ exports.updatePassword = async (req, res) => {
 
     const comparePassword = await bcrypt.compare(
       previousPassword,
-      creator.password
+      creator.password,
     );
 
     if (!comparePassword) {
@@ -464,5 +478,32 @@ exports.resetPassword = async (req, res) => {
     return res
       .status(500)
       .json({ message: "Failed to verify OTP", error: error.message });
+  }
+};
+
+exports.getCreatorDetails = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const creator = await PodcastCreator.findByPk(id);
+
+    if (!creator) {
+      return res.status(404).json({
+        status: "error",
+        message: "creator not found",
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      message: "Creator details fetched successfully",
+      data: creator,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch details",
+      error: error.message,
+    });
   }
 };

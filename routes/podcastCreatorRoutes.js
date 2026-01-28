@@ -10,18 +10,21 @@ router.post(
     { name: "profile", maxCount: 1 },
     { name: "id_proof", maxCount: 1 },
   ]),
-  podcastCreatorController.createPodcastCreator
+  podcastCreatorController.createPodcastCreator,
 );
 
 router.get("/", podcastCreatorController.listPodcastCreators);
+router.get("/list-creators", podcastCreatorController.listCreators);
 router.patch(
   "/:id/status",
   authenticateToken,
-  podcastCreatorController.updateCreatorStatus
+  podcastCreatorController.updateCreatorStatus,
 );
 
 router.post("/login", podcastCreatorController.loginPodcastCreator);
 router.post("/forgot-password", podcastCreatorController.forgotPassword);
 router.post("/reset-password", podcastCreatorController.resetPassword);
+router.get("/user-details/:id", podcastCreatorController.getCreatorDetails);
+router.post("/update-password/:id", podcastCreatorController.updatePassword);
 
 module.exports = router;

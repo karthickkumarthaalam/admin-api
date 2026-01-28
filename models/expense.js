@@ -23,7 +23,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.FLOAT,
       },
       vendor_type: {
-        type: DataTypes.ENUM("vendor", "user"),
+        type: DataTypes.ENUM("vendor", "user", "creator"),
         allowNull: true,
         defaultValue: "vendor",
       },
@@ -77,7 +77,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     {
       tableName: "expenses",
-    }
+    },
   );
 
   Expenses.associate = (models) => {
