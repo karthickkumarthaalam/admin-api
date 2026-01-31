@@ -118,9 +118,9 @@ exports.createPodcast = async (req, res) => {
       podcast_creator_id: null,
     };
 
-    if (created_by_type === "system" && system_user_id) {
-      podcastPayload.system_user_id = Number(system_user_id);
-      podcastPayload.created_by = Number(system_user_id);
+    if (created_by_type === "system" && (system_user_id || rj_id)) {
+      podcastPayload.system_user_id = Number(system_user_id) || Number(rj_id);
+      podcastPayload.created_by = Number(system_user_id) || Number(rj_id);
     }
 
     if (created_by_type === "creator" && podcast_creator_id) {
