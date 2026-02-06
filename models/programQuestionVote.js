@@ -25,6 +25,10 @@ module.exports = (sequelize, DataTypes) => {
         },
         onDelete: "CASCADE",
       },
+      device_id: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
 
       ip_address: {
         type: DataTypes.STRING,
@@ -51,7 +55,7 @@ module.exports = (sequelize, DataTypes) => {
       indexes: [
         {
           unique: true,
-          fields: ["program_question_id", "ip_address"],
+          fields: ["program_question_id", "device_id"],
         },
         {
           fields: ["program_question_option_id"],
@@ -60,7 +64,7 @@ module.exports = (sequelize, DataTypes) => {
           fields: ["country"],
         },
       ],
-    }
+    },
   );
 
   ProgramQuestionVote.associate = (models) => {

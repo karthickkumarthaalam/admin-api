@@ -35,7 +35,7 @@ exports.createProgramQuesiton = async (req, res) => {
 
     if (question_type === "quiz") {
       const correctCount = options.filter(
-        (o) => o.is_correct === 1 || o.is_correct === true
+        (o) => o.is_correct === 1 || o.is_correct === true,
       ).length;
 
       if (correctCount !== 1) {
@@ -110,7 +110,7 @@ exports.getProgramQuestions = async (req, res) => {
 
     const questionIds = questions.map((q) => q.id);
     const optionsIds = questions.flatMap((q) =>
-      q.options.map((option) => option.id)
+      q.options.map((option) => option.id),
     );
 
     // Get vote counts with country breakdown
@@ -192,7 +192,7 @@ exports.getProgramQuestions = async (req, res) => {
     const feedbackCountMap = {};
     feedbackCounts.forEach((item) => {
       feedbackCountMap[item.program_question_id] = parseInt(
-        item.feedback_count
+        item.feedback_count,
       );
     });
 
@@ -296,11 +296,11 @@ exports.getActiveProgramQuestionsPublic = async (req, res) => {
 
 exports.voteForQuestion = async (req, res) => {
   try {
-    const { question_id, option_id } = req.body;
+    const { question_id, option_id, device_id } = req.body;
 
-    if (!question_id || !option_id) {
+    if (!question_id || !option_id || !device_id) {
       return res.status(400).json({
-        message: "question and option are required",
+        message: "question, option and device Id are required",
       });
     }
 
@@ -341,9 +341,24 @@ exports.voteForQuestion = async (req, res) => {
         message: "Invalid option for this question",
       });
     }
+
+    const alreadyVoted = await ProgramQuestionVote.findOne({
+      where: {
+        program_question_id: question_id,
+        device_id,
+      },
+    });
+
+    if (alreadyVoted) {
+      return res.status(409).json({
+        message: "You have already voted for this question",
+      });
+    }
+
     await ProgramQuestionVote.create({
       program_question_id: question_id,
       program_question_option_id: option_id,
+      device_id,
       ip_address: ipAddress,
       user_agent,
       country,
@@ -369,10 +384,12 @@ exports.voteForQuestion = async (req, res) => {
 exports.postFeedback = async (req, res) => {
   try {
     const { question_id } = req.params;
-    const { answer_text } = req.body;
+    const { answer_text, device_id } = req.body;
 
-    if (!question_id) {
-      return res.status(400).json({ message: "question_id is required" });
+    if (!question_id || !device_id) {
+      return res.status(400).json({
+        message: "question_id and device_id are required",
+      });
     }
 
     if (!answer_text || answer_text.trim().length === 0) {
@@ -391,13 +408,12 @@ exports.postFeedback = async (req, res) => {
 
     const ip_address = getClientIp(req);
     const user_agent = req.headers["user-agent"] || null;
-
     const { country, country_name } = await getCountryByIP(ip_address);
 
     const existing = await ProgramQuestionFeedback.findOne({
       where: {
         program_question_id: question_id,
-        ip_address,
+        device_id,
       },
     });
 
@@ -410,6 +426,7 @@ exports.postFeedback = async (req, res) => {
     await ProgramQuestionFeedback.create({
       program_question_id: question_id,
       answer_text,
+      device_id,
       ip_address,
       user_agent,
       country,
@@ -430,6 +447,7 @@ exports.postFeedback = async (req, res) => {
 exports.getQuestionResults = async (req, res) => {
   try {
     const { question_id } = req.params;
+    const { device_id } = req.query;
 
     if (!question_id) {
       return res.status(400).json({ message: "question_id is required" });
@@ -467,7 +485,7 @@ exports.getQuestionResults = async (req, res) => {
 
     const totalVotes = options.reduce(
       (sum, o) => sum + Number(o.vote_count || 0),
-      0
+      0,
     );
 
     /* ---------------- POLL RESULTS (ALWAYS SAFE) ---------------- */
@@ -485,32 +503,24 @@ exports.getQuestionResults = async (req, res) => {
       };
     });
 
-    /* ---------------- FIND USER VOTE (IP BASED) ---------------- */
+    let userVote = null;
 
-    const clientIp = getClientIp(req);
-
-    const userVote = await ProgramQuestionVote.findOne({
-      where: {
-        program_question_id: question_id,
-        ip_address: clientIp,
-      },
-      attributes: ["program_question_option_id"],
-      raw: true,
-    });
-
-    /* ---------------- QUIZ LOGIC ---------------- */
+    if (device_id) {
+      userVote = await ProgramQuestionVote.findOne({
+        where: {
+          program_question_id: question_id,
+          device_id,
+        },
+        attributes: ["program_question_option_id"],
+        raw: true,
+      });
+    }
 
     const correctOption = options.find((o) => Boolean(o.is_correct));
 
     return res.json({
       totalVotes,
       results,
-
-      /*
-        🔐 QUIZ RULES:
-        - If user has NOT voted → do NOT send correct answer
-        - If user HAS voted → send correct + selected option
-      */
       quiz: userVote
         ? {
             correct_option_id: correctOption?.id || null,
@@ -584,12 +594,12 @@ exports.updateProgramQuestion = async (req, res) => {
         enable_whatsapp,
         whatsapp_number,
       },
-      { transaction: t }
+      { transaction: t },
     );
 
     if (question_type === "quiz") {
       const correctCount = options.filter(
-        (o) => o.is_correct === 1 || o.is_correct === true
+        (o) => o.is_correct === 1 || o.is_correct === true,
       ).length;
 
       if (correctCount !== 1) {
@@ -618,7 +628,7 @@ exports.updateProgramQuestion = async (req, res) => {
             },
             {
               transaction: t,
-            }
+            },
           );
         } else {
           const created = await ProgramQuestionOption.create(
@@ -627,7 +637,7 @@ exports.updateProgramQuestion = async (req, res) => {
               option_text: opt.option_text,
               is_correct: opt.is_correct === 1 || opt.is_correct === true,
             },
-            { transaction: t }
+            { transaction: t },
           );
 
           incomingIds.push(created.id);

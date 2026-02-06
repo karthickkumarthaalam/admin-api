@@ -17,6 +17,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: false,
       },
+      device_id: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       ip_address: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -38,7 +42,13 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "program_question_feedbacks",
       timestamps: true,
       paranoid: true,
-    }
+      indexes: [
+        {
+          unique: true,
+          fields: ["program_question_id", "device_id"],
+        },
+      ],
+    },
   );
 
   ProgramQuestionFeedback.associate = (models) => {
