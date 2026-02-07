@@ -123,6 +123,12 @@ db.ProgramQuestionFeedback = require("./programQuestionFeedback")(
   Sequelize,
 );
 
+db.SummerFestivalRefund = require("./summerFestivalRefund")(
+  sequelize,
+  Sequelize,
+);
+db.Attendee = require("./attendees")(sequelize, Sequelize);
+
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);
