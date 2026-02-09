@@ -201,7 +201,9 @@ exports.getCommentByPodcast = async (req, res) => {
     let where = {};
 
     where.podcast_id = req.params.id;
-    where.status = "approved";
+    if (req.query.status) {
+      where.status = req.query.status;
+    }
 
     const result = await pagination(PodcastComment, {
       page,
@@ -222,6 +224,7 @@ exports.getCommentByPodcast = async (req, res) => {
       result,
     });
   } catch (error) {
+    console.error(error.message);
     res.status(500).json({
       status: "error",
       message: "Failed to fetch comments",
