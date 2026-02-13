@@ -94,6 +94,8 @@ db.Event = require("./event")(sequelize, Sequelize);
 db.EventBanner = require("./eventBanner")(sequelize, Sequelize);
 db.EventCrewMember = require("./eventCrewMembers")(sequelize, Sequelize);
 db.EventAmenity = require("./eventAmenity")(sequelize, Sequelize);
+db.EventEnquiry = require("./eventEnquiry")(sequelize, Sequelize);
+db.EventContactDetails = require("./eventContactdetails")(sequelize, Sequelize);
 
 //Blogs tables
 db.Blogs = require("./blogs")(sequelize, Sequelize);

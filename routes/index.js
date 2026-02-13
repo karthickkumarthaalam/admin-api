@@ -90,6 +90,8 @@ router.use("/event", require("./eventRoutes"));
 router.use("/event-banner", require("./eventBannerRoutes"));
 router.use("/event-amenity", require("./eventAmenityRoutes"));
 router.use("/event-crew", require("./eventCrewMemberRoutes"));
+router.use("/event-enquiries", require("./eventEnquiryRoutes"));
+router.use("/event-contact-details", require("./eventContactDetailsRoutes"));
 
 // Notifications
 router.use("/notifications", require("./notificationRoutes"));

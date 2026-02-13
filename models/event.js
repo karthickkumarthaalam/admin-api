@@ -62,7 +62,7 @@ module.exports = (sequelize, DataTypes) => {
           "ongoing",
           "completed",
           "postponed",
-          "cancelled"
+          "cancelled",
         ),
         allowNull: false,
         defaultValue: "planning",
@@ -81,7 +81,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "events",
       timestamps: true,
       paranoid: true,
-    }
+    },
   );
 
   // 🔗 Associations
@@ -105,6 +105,16 @@ module.exports = (sequelize, DataTypes) => {
     Event.hasMany(models.EventAmenity, {
       foreignKey: "event_id",
       as: "amenities",
+    });
+
+    Event.hasMany(models.EventEnquiry, {
+      foreignKey: "event_id",
+      as: "enquiries",
+    });
+
+    Event.hasOne(models.EventContactDetails, {
+      foreignKey: "event_id",
+      as: "contacts",
     });
   };
 
