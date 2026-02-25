@@ -34,7 +34,7 @@ module.exports = {
         allowNull: false,
         references: {
           model: "system_users",
-          key: "id",
+          key: "user_id",
         },
         onUpdate: "CASCADE",
         onDelete: "CASCADE",

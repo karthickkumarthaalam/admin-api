@@ -39,6 +39,7 @@ module.exports = (sequelize, DataTypes) => {
 
     CrewModulePermission.belongsTo(models.SystemUsers, {
       foreignKey: "system_user_id",
+      targetKey: "user_id",
       as: "user",
     });
   };

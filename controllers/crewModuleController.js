@@ -134,7 +134,6 @@ exports.checkModuleAccess = async (req, res) => {
       can_manage_rooms: permission.can_manage_rooms || false,
     });
   } catch (err) {
-    console.error("checkModuleAccess error:", err);
     res.status(500).json({
       success: false,
       message: "Permission check failed",
