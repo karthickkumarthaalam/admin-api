@@ -137,6 +137,10 @@ db.CrewManagementList = require("./crewManagementList")(sequelize, Sequelize);
 db.CrewRooms = require("./crewRooms")(sequelize, Sequelize);
 db.CrewFlights = require("./crewFilghts")(sequelize, Sequelize);
 db.CrewMerchant = require("./crewMerchant")(sequelize, Sequelize);
+db.CrewModulePermission = require("./crewModulePermission")(
+  sequelize,
+  Sequelize,
+);
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {

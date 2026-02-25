@@ -57,7 +57,7 @@ exports.createSystemUser = async (req, res) => {
         role:
           body.is_admin === "true" || body.is_admin === true ? "admin" : "user",
       },
-      { transaction }
+      { transaction },
     );
 
     // ✅ Handle image upload (local)
@@ -78,7 +78,7 @@ exports.createSystemUser = async (req, res) => {
         show_profile:
           body.show_profile === "true" || body.show_profile === true,
       },
-      { transaction }
+      { transaction },
     );
 
     await transaction.commit();
@@ -171,7 +171,7 @@ exports.updateSystemUser = async (req, res) => {
         await sendRjPasswordEmail(
           email || userRecord.email,
           name || systemUser.name,
-          plainPassword
+          plainPassword,
         );
       } catch (err) {
         console.warn("⚠️ Email sending failed:", err.message);
@@ -213,7 +213,7 @@ exports.updateSystemUser = async (req, res) => {
         is_admin: is_admin === true || is_admin === "true",
         image_url: imageUrl,
       },
-      { transaction }
+      { transaction },
     );
 
     await transaction.commit();
