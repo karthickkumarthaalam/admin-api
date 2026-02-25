@@ -131,6 +131,13 @@ db.SummerFestivalRefund = require("./summerFestivalRefund")(
 );
 db.Attendee = require("./attendees")(sequelize, Sequelize);
 
+//Crew Management
+db.CrewManagement = require("./crewmanagment")(sequelize, Sequelize);
+db.CrewManagementList = require("./crewManagementList")(sequelize, Sequelize);
+db.CrewRooms = require("./crewRooms")(sequelize, Sequelize);
+db.CrewFlights = require("./crewFilghts")(sequelize, Sequelize);
+db.CrewMerchant = require("./crewMerchant")(sequelize, Sequelize);
+
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {
     db[modelName].associate(db);

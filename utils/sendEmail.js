@@ -49,7 +49,7 @@ const sendOtpEmail = async (toEmail, toName, otp) => {
       <h1 style="color: #d63384;">${otp}</h1>
       <p>This OTP is valid for 5 minutes.</p>
       <br>
-      <p>Regards,<br>Thaalam Media Team</p>
+      <p>Regards,<br>Thaalam media GmbH</p>
       <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
     </div>
   `;
@@ -79,7 +79,7 @@ const verificationEmail = async (toEmail, toName, otp) => {
         <h1 style="color: #d63384;">${otp}</h1>
         <p>This OTP is valid for 5 minutes.</p>
         <br>
-        <p>Regard,<br>Thaalam Media Team</p>
+        <p>Regard,<br>Thaalam media GmbH</p>
         <img src="cid:logoimg" alt-"Thaalam Media Logo" style="width: 150px; margin-top: 20px;"+/> 
      </div>
     `;
@@ -107,7 +107,7 @@ const sendExpiryEmail = async (toEmail, toName, expiryDate) => {
       <p>Your subscription is expired!!!</p>
       <p>Please renew to continue enjoying our services.</p>
       <br>
-      <p>Regards,<br>Thaalam Media Team</p>
+      <p>Regards,<br>Thaalam media GmbH</p>
       <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
     </div>
   `;
@@ -137,7 +137,7 @@ const sendPreExpiryEmail = async (toEmail, toName, expiryDate) => {
         <h1 style="color: #d63384;">${expiryDate}</h1>
         <p>Please renew to continue enjoying our services.</p>
         <br>
-        <p>Regards,<br>Thaalam Media Team</p>
+        <p>Regards,<br>Thaalam media GmbH</p>
         <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
     </div>
   `;
@@ -169,7 +169,7 @@ const sendGracePeriodEmail = async (toEmail, toName, expiryDate) => {
       <p>If auto-renewal is enabled, your payment will be processed automatically.</p>
       <p>If not, please renew your package before the grace period ends to continue enjoying uninterrupted service.</p>
       <br>
-      <p>Regards,<br>Thaalam Media Team</p>
+      <p>Regards,<br>Thaalam media GmbH</p>
       <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
     </div>
   `;
@@ -197,7 +197,7 @@ const sendPaymentReceiptEmail = async (
   packageName,
   amount,
   currency,
-  receiptUrl
+  receiptUrl,
 ) => {
   const htmlContent = `
     <div style="font-family: Arial, sans-serif; color: #333;">
@@ -209,7 +209,7 @@ const sendPaymentReceiptEmail = async (
       <a href="${receiptUrl}" style="display:inline-block;padding:10px 20px;background-color:#d63384;color:white;border-radius:4px;text-decoration:none;">View Receipt</a>
       <br><br>
       <p>We appreciate your support!</p>
-      <p>Regards,<br>Thaalam Media Team</p>
+      <p>Regards,<br>Thaalam media GmbH</p>
       <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
     </div>
   `;
@@ -246,7 +246,7 @@ const sendRjPasswordEmail = async (toEmail, toName, plainPassword) => {
 
       <br><br>
       <p>Please keep this information safe and secure.</p>
-      <p>Regards,<br>Thaalam Media Team</p>
+      <p>Regards,<br>Thaalam media GmbH</p>
 
       <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
     </div>
@@ -280,7 +280,7 @@ const sendEnquiryEmail = async (toEmail, toName, subjectText, messageText) => {
         <p> ${messageText}</p>
 
         <p style="margin-top: 20px;">We appreciate your interest and will respond as quickly as possible.</p>
-        <p>Regards,<br>Thaalam Media Team</p>
+        <p>Regards,<br>Thaalam media GmbH</p>
 
         <img src="cid:logoimage" alt="Thaalam Media Logo" style="width: 150px; margin-top: 20px;" />
     </div>
@@ -392,7 +392,7 @@ const sendPodcastCreatorEmail = async (toEmail, toName) => {
             </p>
             <p style="font-size: 14px; margin: 16px 0 4px 0;">
               Warm regards,<br/>
-              <strong>Thaalam Media Team</strong>
+              <strong>Thaalam media GmbH</strong>
             </p>
           </td>
         </tr>
@@ -532,6 +532,114 @@ const sendCreatorOTP = async (toName, toEmail, otp) => {
   });
 };
 
+const sendCrewAccessEmail = async (toEmail, plainPassword) => {
+  const htmlContent = `
+    <div style="font-family: Arial, sans-serif; color:#222; max-width:600px; padding:12px;">
+      <h2 style="color:#cc0000;">Crew Portal Access Activated</h2>
+      
+      
+      <p>Your crew access for <strong>Thaalam Media</strong> has been activated.</p>
+
+      <div style="padding:14px; margin:18px 0; background:#fff7f7; border-left:4px solid #cc0000; border-radius:6px;">
+        <p><strong>Email:</strong> ${toEmail}</p>
+        <p><strong>Temporary Password:</strong> ${plainPassword}</p>
+      </div>
+
+      <p>Please login using the link below:</p>
+
+      <a href="https://thaalam.ch/crew-login"
+        style="display:inline-block;padding:10px 20px;background-color:#cc0000;color:white;border-radius:4px;text-decoration:none;">
+        Login to Crew Portal
+      </a>
+
+      <p style="margin-top:15px;">⚠ We recommend changing your password after first login.</p>
+
+      <br>
+      <p>Regards,<br><strong>Thaalam media GmbH</strong></p>
+
+      <img src="cid:logoimage" width="120" style="margin-top:16px;"/>
+    </div>
+  `;
+
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
+
+  await sendEmail({
+    toEmail,
+    subject: "Crew Portal Access - Thaalam Media",
+    htmlContent,
+    attachments,
+  });
+};
+
+const sendCrewOtpEmail = async (toEmail, otp) => {
+  const htmlContent = `
+  <div style="font-family: Arial, sans-serif; background:#f6f7fb; padding:30px;">
+    <div style="max-width:520px;margin:auto;background:#ffffff;border-radius:10px;padding:30px;border:1px solid #eee;">
+      
+      <div style="text-align:center;margin-bottom:20px;">
+        <img src="cid:logoimage" alt="Thaalam Media" width="140"/>
+      </div>
+
+      <h2 style="margin:0;color:#222;">Hello,</h2>
+      <p style="font-size:15px;color:#555;margin-top:8px;">
+        We received a request to reset your crew portal password.
+      </p>
+
+      <div style="margin:25px 0;padding:18px;background:#fef2f2;border-left:4px solid #cc0000;border-radius:6px;text-align:center;">
+        <p style="margin:0;font-size:14px;color:#666;">Your OTP Code</p>
+        <h1 style="margin:8px 0 0 0;font-size:34px;letter-spacing:6px;color:#cc0000;">
+          ${otp}
+        </h1>
+        <p style="font-size:13px;color:#888;margin-top:8px;">
+          Valid for 5 minutes
+        </p>
+      </div>
+
+      <p style="font-size:14px;color:#444;">
+        Enter this OTP in the password reset screen to create a new password.
+      </p>
+
+      <p style="font-size:14px;color:#777;margin-top:18px;">
+        If you did not request a password reset, you can safely ignore this email.
+      </p>
+
+      <hr style="border:none;border-top:1px solid #eee;margin:25px 0;" />
+
+      <p style="font-size:14px;margin:0;">
+        Regards,<br/>
+        <strong>Thaalam media GmbH</strong>
+      </p>
+
+      <div style="text-align:center;margin-top:20px;">
+        <img src="cid:logoimage" width="110"/>
+      </div>
+
+    </div>
+  </div>
+  `;
+
+  const attachments = [
+    {
+      filename: "thaalam-logo.png",
+      path: path.join(__dirname, "../public/assets/thaalam-logo.png"),
+      cid: "logoimage",
+    },
+  ];
+
+  return await sendEmail({
+    toEmail,
+    subject: "Your OTP for Password Reset - Thaalam Crew Access",
+    htmlContent,
+    attachments,
+  });
+};
+
 module.exports = {
   sendEmail,
   sendOtpEmail,
@@ -548,4 +656,6 @@ module.exports = {
   creatorCredentialSharing,
   creatorRejectionTemplate,
   sendCreatorOTP,
+  sendCrewOtpEmail,
+  sendCrewAccessEmail,
 };
