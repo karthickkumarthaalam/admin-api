@@ -111,7 +111,7 @@ router.use("/crew-management", require("./crewManagementRoutes"));
 router.use("/crew-member", require("./crewMemberRoutes"));
 router.use("/crew-flights", require("./crewFlightRoutes"));
 router.use("/crew-rooms", require("./crewRoomsRoutes"));
-router.use("/crew-document", require("./crewDocumentRoutes"));
+// router.use("/crew-document", require("./crewDocumentRoutes"));
 router.use("/crew-merchant", require("./crewMerchantRoutes"));
 router.use("/crew-permissions", require("./crewModuleRoutes"));
 

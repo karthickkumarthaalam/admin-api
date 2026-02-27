@@ -15,6 +15,7 @@ exports.getNextCrewId = async (req, res) => {
   try {
     const lastCrew = await CrewManagement.findOne({
       order: [["createdAt", "DESC"]],
+      paranoid: false,
     });
 
     let lastId = 1;

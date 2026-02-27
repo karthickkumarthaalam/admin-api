@@ -224,8 +224,10 @@ exports.uploadCrewExcel = async (req, res) => {
 
     const workbook = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    let rows = XLSX.utils.sheet_to_json(sheet);
-
+    let rows = XLSX.utils.sheet_to_json(sheet, {
+      raw: false,
+      defval: null,
+    });
     if (!rows.length) {
       return res.status(400).json({ success: false, message: "Excel empty" });
     }
