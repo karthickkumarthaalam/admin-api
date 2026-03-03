@@ -142,6 +142,7 @@ db.CrewModulePermission = require("./crewModulePermission")(
   sequelize,
   Sequelize,
 );
+db.CrewVisa = require("./crewVisa")(sequelize, Sequelize);
 
 Object.keys(db).forEach((modelName) => {
   if (db[modelName].associate) {

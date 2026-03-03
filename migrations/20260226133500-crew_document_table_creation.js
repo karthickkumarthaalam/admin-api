@@ -27,12 +27,12 @@ module.exports = {
       },
       document_type: {
         type: Sequelize.ENUM(
-          "passport_photo",
+          "photo",
           "aadhar_card",
           "income_revenue",
           "passport",
-          "visa",
-          "other",
+          "previous_visa",
+          "bank_statement",
         ),
         allowNull: false,
       },
@@ -69,6 +69,6 @@ module.exports = {
      * await queryInterface.dropTable('users');
      */
 
-    await queryInterface.removeColumn("crew_documents");
+    await queryInterface.dropTable("crew_documents");
   },
 };

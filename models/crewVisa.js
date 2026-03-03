@@ -1,73 +1,71 @@
 module.exports = (sequelize, DataTypes) => {
-  const CrewRooms = sequelize.define(
-    "CrewRooms",
+  const CrewVisa = sequelize.define(
+    "CrewVisa",
     {
       id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
         primaryKey: true,
       },
-
       crew_list_id: {
         type: DataTypes.INTEGER,
-        allowNull: false,
         references: {
           model: "crew_management_list",
           key: "id",
         },
         onDelete: "CASCADE",
-      },
-      sort_order: {
-        type: DataTypes.INTEGER,
-        defaultValue: 1,
-      },
-      hotel_name: {
-        type: DataTypes.STRING,
         allowNull: false,
       },
-
-      room_number: {
+      visa_type: {
+        type: DataTypes.ENUM("tourist", "business", "work", "student"),
+        allowNull: false,
+      },
+      visa_number: {
+        type: DataTypes.STRING,
+        allowNull: true,
+        unique: true,
+      },
+      country: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-
-      room_type: {
-        type: DataTypes.STRING,
+      date_of_issue: {
+        type: DataTypes.DATEONLY,
         allowNull: true,
       },
-
-      checkin_date: {
-        type: DataTypes.DATE,
+      date_of_expiry: {
+        type: DataTypes.DATEONLY,
         allowNull: true,
       },
-
-      checkout_date: {
-        type: DataTypes.DATE,
-        allowNull: true,
+      visa_verified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
       },
-
-      city: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
-
-      remarks: {
+      visa_file_url: {
         type: DataTypes.TEXT,
+        allowNull: true,
+      },
+      visa_file_name: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      remarks: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
     },
     {
-      tableName: "crew_rooms",
+      tableName: "crew_visas",
       timestamps: true,
     },
   );
 
-  CrewRooms.associate = (models) => {
-    CrewRooms.belongsTo(models.CrewManagementList, {
+  CrewVisa.associate = (models) => {
+    CrewVisa.belongsTo(models.CrewManagementList, {
       foreignKey: "crew_list_id",
-      as: "crew",
+      as: "visas",
     });
   };
 
-  return CrewRooms;
+  return CrewVisa;
 };

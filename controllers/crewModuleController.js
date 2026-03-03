@@ -7,6 +7,7 @@ exports.addCrewPermissions = async (req, res) => {
       system_user_id,
       can_manage_flight,
       can_manage_rooms,
+      can_manage_visa,
     } = req.body;
 
     if (!crew_management_id || !system_user_id) {
@@ -24,6 +25,7 @@ exports.addCrewPermissions = async (req, res) => {
       await permission.update({
         can_manage_flight: !!can_manage_flight,
         can_manage_rooms: !!can_manage_rooms,
+        can_manage_visa: !!can_manage_visa,
       });
 
       return res.json({
@@ -38,6 +40,7 @@ exports.addCrewPermissions = async (req, res) => {
       system_user_id,
       can_manage_flight: !!can_manage_flight,
       can_manage_rooms: !!can_manage_rooms,
+      can_manage_visa: !!can_manage_visa,
     });
 
     res.json({
@@ -125,6 +128,7 @@ exports.checkModuleAccess = async (req, res) => {
         success: true,
         can_manage_flight: false,
         can_manage_rooms: false,
+        can_manage_visa: false,
       });
     }
 
@@ -132,6 +136,7 @@ exports.checkModuleAccess = async (req, res) => {
       success: true,
       can_manage_flight: permission.can_manage_flight || false,
       can_manage_rooms: permission.can_manage_rooms || false,
+      can_manage_visa: permission.can_manage_visa || false,
     });
   } catch (err) {
     res.status(500).json({

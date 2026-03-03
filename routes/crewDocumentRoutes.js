@@ -1,22 +1,19 @@
 const express = require("express");
 const router = express.Router();
+
 const controller = require("../controllers/crewDocumentController");
-const upload = require("../middlewares/uploadPdf");
+const upload = require("../middlewares/crewUpload");
+
+router.post("/upload", upload.single("file"), controller.uploadCrewDocument);
 
 router.post(
-  "/passport/:crewId",
-  upload.array("passport_files", 10),
-  controller.uploadPassportFiles,
+  "/upload-multiple",
+  upload.array("files", 20),
+  controller.uploadCrewMultipleDocuments,
 );
 
-router.post(
-  "/visa/:crewId",
-  upload.array("visa_files", 10),
-  controller.uploadVisaFiles,
-);
+router.get("/:crew_list_id", controller.getCrewDocuments);
 
-router.delete("/passport/:crewId", controller.deleteSinglePassport);
-
-router.delete("/visa/:crewId", controller.deleteSingleVisa);
+router.delete("/:id", controller.deleteCrewDocument);
 
 module.exports = router;

@@ -3,6 +3,8 @@ const {
   CrewFlights,
   CrewRooms,
   sequelize,
+  CrewDocument,
+  CrewVisa,
 } = require("../models");
 const XLSX = require("xlsx");
 const formatExcelDate = require("../utils/formatExcelDate");
@@ -23,10 +25,8 @@ exports.createCrewMember = async (req, res) => {
       passport_number,
       date_of_issue,
       date_of_expiry,
-      visa_type,
-      visa_number,
-      visa_issue,
-      visa_expiry,
+      boarding_from,
+      returning_to,
       food_preference,
       room_preference,
       flight_class,
@@ -46,10 +46,8 @@ exports.createCrewMember = async (req, res) => {
       passport_number: passport_number || null,
       date_of_issue: date_of_issue || null,
       date_of_expiry: date_of_expiry || null,
-      visa_type: visa_type || null,
-      visa_number: visa_number || null,
-      visa_issue: visa_issue || null,
-      visa_expiry: visa_expiry || null,
+      boarding_from: boarding_from || null,
+      returning_to: returning_to || null,
       food_preference: food_preference || null,
       flight_class,
       room_preference: room_preference || null,
@@ -78,6 +76,8 @@ exports.getCrewByManagementId = async (req, res) => {
       include: [
         { model: CrewFlights, as: "flights" },
         { model: CrewRooms, as: "rooms" },
+        { model: CrewDocument, as: "documents" },
+        { model: CrewVisa, as: "visas" },
       ],
       order: [
         [

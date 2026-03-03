@@ -37,6 +37,10 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
+      flight_class: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
       airline: {
         type: DataTypes.STRING,
         allowNull: true,
@@ -61,10 +65,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      ticket_number: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
 
       pnr: {
         type: DataTypes.STRING,
@@ -76,20 +76,14 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
-      ticket_issued_date: {
-        type: DataTypes.DATE,
-        allowNull: true,
-      },
-
       booking_status: {
         type: DataTypes.ENUM("pending", "booked", "cancelled"),
-        defaultValue: "pending",
+        defaultValue: "booked",
       },
     },
     {
       tableName: "crew_flights",
       timestamps: true,
-      paranoid: true,
     },
   );
 

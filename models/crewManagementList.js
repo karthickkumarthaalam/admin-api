@@ -65,24 +65,12 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
-      visa_verified: {
-        type: DataTypes.BOOLEAN,
-        defaultValue: false,
-      },
-      visa_type: {
+      boarding_from: {
         type: DataTypes.STRING,
         allowNull: true,
       },
-      visa_number: {
+      returning_to: {
         type: DataTypes.STRING,
-        allowNull: true,
-      },
-      visa_issue: {
-        type: DataTypes.DATEONLY,
-        allowNull: true,
-      },
-      visa_expiry: {
-        type: DataTypes.DATEONLY,
         allowNull: true,
       },
       food_preference: {
@@ -117,7 +105,6 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: "crew_management_list",
       timestamps: true,
-      paranoid: true,
     },
   );
 
@@ -133,6 +120,14 @@ module.exports = (sequelize, DataTypes) => {
     CrewManagementList.hasMany(models.CrewRooms, {
       foreignKey: "crew_list_id",
       as: "rooms",
+    });
+    CrewManagementList.hasMany(models.CrewDocument, {
+      foreignKey: "crew_list_id",
+      as: "documents",
+    });
+    CrewManagementList.hasMany(models.CrewVisa, {
+      foreignKey: "crew_list_id",
+      as: "visas",
     });
   };
 

@@ -1,11 +1,9 @@
-const fs = require("fs");
 const { PutObjectCommand, DeleteObjectCommand } = require("@aws-sdk/client-s3");
 const r2Client = require("./r2client");
 
-exports.uploadToR2 = async (localFilePath, folder, originalName, mimetype) => {
-  const fileBuffer = fs.readFileSync(localFilePath);
-
-  const key = `${folder}/${Date.now()}-${originalName}`;
+exports.uploadToR2 = async (fileBuffer, folder, originalName, mimetype) => {
+  const cleanName = originalName.replace(/\s+/g, "_");
+  const key = `${folder}/${Date.now()}-${cleanName}`;
 
   await r2Client.send(
     new PutObjectCommand({
@@ -13,6 +11,7 @@ exports.uploadToR2 = async (localFilePath, folder, originalName, mimetype) => {
       Key: key,
       Body: fileBuffer,
       ContentType: mimetype || "application/octet-stream",
+      ContentDisposition: "inline",
     }),
   );
 

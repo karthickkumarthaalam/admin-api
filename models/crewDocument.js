@@ -18,12 +18,12 @@ module.exports = (sequelize, DataTypes) => {
       },
       document_type: {
         type: DataTypes.ENUM(
-          "passport_photo",
+          "photo",
           "aadhar_card",
           "income_revenue",
           "passport",
-          "visa",
-          "other",
+          "previous_visa",
+          "bank_statement",
         ),
         allowNull: false,
       },
@@ -39,7 +39,6 @@ module.exports = (sequelize, DataTypes) => {
     {
       tableName: "crew_documents",
       timestamps: true,
-      paranoid: true,
     },
   );
 
