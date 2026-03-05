@@ -37,12 +37,22 @@ module.exports = (sequelize, DataTypes) => {
       },
 
       checkin_date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
         allowNull: true,
       },
 
       checkout_date: {
-        type: DataTypes.DATE,
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+
+      checkin_time: {
+        type: DataTypes.TIME,
+        allowNull: true,
+      },
+
+      checkout_time: {
+        type: DataTypes.TIME,
         allowNull: true,
       },
 
@@ -53,6 +63,16 @@ module.exports = (sequelize, DataTypes) => {
 
       remarks: {
         type: DataTypes.TEXT,
+        allowNull: true,
+      },
+
+      currency: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      room_charge: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
     },

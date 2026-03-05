@@ -97,6 +97,8 @@ exports.bulkSaveVisas = async (req, res) => {
         date_of_issue: v.date_of_issue,
         date_of_expiry: v.date_of_expiry,
         visa_verified: v.visa_verified ?? false,
+        currency: v.currency,
+        visa_charge: v.visa_charge,
         visa_file_url: fileUrl,
         visa_file_name: fileName,
         remarks: v.remarks,
@@ -133,6 +135,8 @@ exports.createVisa = async (req, res) => {
       date_of_expiry,
       visa_verified,
       remarks,
+      currency,
+      visa_charge,
     } = req.body;
 
     if (!crew_list_id) {
@@ -167,6 +171,8 @@ exports.createVisa = async (req, res) => {
       visa_file_url: fileUrl,
       visa_file_name: fileName,
       remarks,
+      currency,
+      visa_charge,
     });
 
     res.json({
@@ -230,6 +236,8 @@ exports.updateVisa = async (req, res) => {
       visa_file_url: fileUrl,
       visa_file_name: fileName,
       remarks: req.body.remarks,
+      currency: req.body.currency,
+      visa_charge: req.body.visa_charge,
     });
 
     res.json({

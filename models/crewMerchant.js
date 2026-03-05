@@ -16,6 +16,20 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
       },
+      merchant_category: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        get() {
+          const raw = this.getDataValue("merchant_category");
+          return raw ? raw.split(",") : [];
+        },
+        set(value) {
+          this.setDataValue(
+            "merchant_category",
+            Array.isArray(value) ? value.join(",") : value,
+          );
+        },
+      },
       created_by: {
         type: DataTypes.INTEGER,
         allowNull: false,

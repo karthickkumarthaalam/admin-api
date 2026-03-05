@@ -4,7 +4,7 @@ const pagination = require("../utils/pagination");
 
 exports.createCrewMerchant = async (req, res) => {
   try {
-    const { merchant_type, merchant_name } = req.body;
+    const { merchant_type, merchant_name, merchant_category } = req.body;
 
     if (!merchant_type || !merchant_name) {
       return res.status(400).json({ message: "Bad request" });
@@ -23,6 +23,7 @@ exports.createCrewMerchant = async (req, res) => {
     const merchant = await CrewMerchant.create({
       merchant_type,
       merchant_name,
+      merchant_category,
       created_by: req.user?.id,
     });
 
@@ -113,10 +114,12 @@ exports.updateCrewMerchant = async (req, res) => {
       });
     }
 
-    const { merchant_type, merchant_name } = req.body;
+    const { merchant_type, merchant_name, merchant_category } = req.body;
 
     merchant.merchant_type = merchant_type || merchant.merchant_type;
     merchant.merchant_name = merchant_name || merchant.merchant_name;
+    merchant.merchant_category =
+      merchant_category || merchant.merchant_category;
     await merchant.save();
 
     res.status(200).json({

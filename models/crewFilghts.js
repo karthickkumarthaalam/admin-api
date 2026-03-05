@@ -46,13 +46,23 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: true,
       },
 
+      departure_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+
+      arrival_date: {
+        type: DataTypes.DATEONLY,
+        allowNull: true,
+      },
+
       departure_time: {
-        type: DataTypes.DATE,
+        type: DataTypes.TIME,
         allowNull: true,
       },
 
       arrival_time: {
-        type: DataTypes.DATE,
+        type: DataTypes.TIME,
         allowNull: true,
       },
 
@@ -79,6 +89,16 @@ module.exports = (sequelize, DataTypes) => {
       booking_status: {
         type: DataTypes.ENUM("pending", "booked", "cancelled"),
         defaultValue: "booked",
+      },
+
+      currency: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      ticket_charge: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
     },
     {

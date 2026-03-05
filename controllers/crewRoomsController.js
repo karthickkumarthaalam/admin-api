@@ -45,9 +45,13 @@ exports.bulkSaveRooms = async (req, res) => {
         room_number: r.room_number,
         room_type: r.room_type,
         checkin_date: r.checkin_date,
+        checkin_time: r.checkin_time,
         checkout_date: r.checkout_date,
+        checkout_time: r.checkout_time,
         city: r.city,
         remarks: r.remarks,
+        currency: r.currency,
+        room_charge: r.room_charge,
       };
 
       if (r.id) {
@@ -80,8 +84,12 @@ exports.createRoom = async (req, res) => {
       room_type,
       checkin_date,
       checkout_date,
+      checkin_time,
+      checkout_time,
       city,
       remarks,
+      currency,
+      room_charge,
     } = req.body;
 
     if (!crew_list_id) {
@@ -106,9 +114,13 @@ exports.createRoom = async (req, res) => {
       room_type,
       checkin_date,
       checkout_date,
+      checkin_time,
+      checkout_time,
       city,
       remarks,
       sort_order,
+      currency,
+      room_charge,
     });
 
     res.json({
@@ -143,8 +155,12 @@ exports.updateRoom = async (req, res) => {
       room_type: req.body.room_type,
       checkin_date: req.body.checkin_date,
       checkout_date: req.body.checkout_date,
+      checkin_time: req.body.checkin_time,
+      checkout_time: req.body.checkout_time,
       city: req.body.city,
       remarks: req.body.remarks,
+      currency: req.body.currency,
+      room_charge: req.body.room_charge,
     });
 
     res.json({

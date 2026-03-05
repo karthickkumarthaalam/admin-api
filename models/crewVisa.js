@@ -53,6 +53,16 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: true,
       },
+
+      currency: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      visa_charge: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
     },
     {
       tableName: "crew_visas",
