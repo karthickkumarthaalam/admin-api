@@ -115,5 +115,6 @@ router.use("/crew-rooms", require("./crewRoomsRoutes"));
 router.use("/crew-document", require("./crewDocumentRoutes"));
 router.use("/crew-merchant", require("./crewMerchantRoutes"));
 router.use("/crew-permissions", require("./crewModuleRoutes"));
+router.use("/crew-management-document", require("./crewMDocumentRoutes"));
 
 module.exports = router;

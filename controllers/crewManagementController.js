@@ -1,5 +1,5 @@
 const db = require("../models");
-const { CrewManagement } = db;
+const { CrewManagement, CrewManagementDocument } = db;
 const { Op } = require("sequelize");
 const pagination = require("../utils/pagination");
 const bcrypt = require("bcrypt");
@@ -131,6 +131,12 @@ exports.getAllCrewManagement = async (req, res) => {
       page,
       limit,
       where,
+      include: [
+        {
+          model: CrewManagementDocument,
+          as: "documents",
+        },
+      ],
     });
 
     return res.status(200).json({

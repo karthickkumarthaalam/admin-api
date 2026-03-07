@@ -134,6 +134,10 @@ db.Attendee = require("./attendees")(sequelize, Sequelize);
 //Crew Management
 db.CrewManagement = require("./crewmanagment")(sequelize, Sequelize);
 db.CrewManagementList = require("./crewManagementList")(sequelize, Sequelize);
+db.CrewManagementDocument = require("./crewManagementDocument")(
+  sequelize,
+  Sequelize,
+);
 db.CrewRooms = require("./crewRooms")(sequelize, Sequelize);
 db.CrewFlights = require("./crewFilghts")(sequelize, Sequelize);
 db.CrewMerchant = require("./crewMerchant")(sequelize, Sequelize);
