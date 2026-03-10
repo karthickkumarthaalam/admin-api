@@ -39,6 +39,40 @@ exports.createCrewMerchant = async (req, res) => {
   }
 };
 
+exports.getAllCategories = async (req, res) => {
+  try {
+    const data = await CrewMerchant.findAll();
+
+    const grouped = {};
+
+    data.forEach((item) => {
+      const type = item.merchant_type.toLowerCase();
+
+      if (!grouped[type]) {
+        grouped[type] = new Set();
+      }
+
+      item.merchant_category.forEach((cat) => {
+        if (cat) {
+          grouped[type].add(cat.toLowerCase());
+        }
+      });
+    });
+
+    const result = Object.keys(grouped).map((type) => ({
+      type,
+      categories: [...grouped[type]],
+    }));
+
+    res.status(200).json({ data: result });
+  } catch (error) {
+    res.status(500).json({
+      message: "Failed to fetch merchants",
+      error: error.message,
+    });
+  }
+};
+
 exports.getAllCrewMerchants = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;

@@ -5,6 +5,7 @@ const { authenticateToken } = require("../middlewares/authMiddleware");
 
 router.post("/", authenticateToken, crewMerchantController.createCrewMerchant);
 router.get("/", crewMerchantController.getAllCrewMerchants);
+router.get("/all-categories", crewMerchantController.getAllCategories);
 router.get("/merchant-type", crewMerchantController.getMerchantByType);
 router.put("/:id", crewMerchantController.updateCrewMerchant);
 router.delete("/:id", crewMerchantController.deleteCrewMerchant);
