@@ -547,7 +547,7 @@ const sendCrewAccessEmail = async (toEmail, plainPassword) => {
 
       <p>Please login using the link below:</p>
 
-      <a href="https://thaalam.ch/crew-login"
+      <a href="https://thaalam.ch/crew-portal"
         style="display:inline-block;padding:10px 20px;background-color:#cc0000;color:white;border-radius:4px;text-decoration:none;">
         Login to Crew Portal
       </a>
@@ -582,10 +582,6 @@ const sendCrewOtpEmail = async (toEmail, otp) => {
   <div style="font-family: Arial, sans-serif; background:#f6f7fb; padding:30px;">
     <div style="max-width:520px;margin:auto;background:#ffffff;border-radius:10px;padding:30px;border:1px solid #eee;">
       
-      <div style="text-align:center;margin-bottom:20px;">
-        <img src="cid:logoimage" alt="Thaalam Media" width="140"/>
-      </div>
-
       <h2 style="margin:0;color:#222;">Hello,</h2>
       <p style="font-size:15px;color:#555;margin-top:8px;">
         We received a request to reset your crew portal password.
@@ -616,7 +612,7 @@ const sendCrewOtpEmail = async (toEmail, otp) => {
         <strong>Thaalam media GmbH</strong>
       </p>
 
-      <div style="text-align:center;margin-top:20px;">
+      <div style="margin-top:20px;">
         <img src="cid:logoimage" width="110"/>
       </div>
 
