@@ -3,6 +3,7 @@ const {
   ProgramCategory,
   SystemUsers,
   RadioStation,
+  FlashNews,
 } = require("../models");
 const { Op, Sequelize } = require("sequelize");
 const pagination = require("../utils/pagination");
@@ -297,12 +298,12 @@ exports.getCurrentProgram = async (req, res) => {
               Sequelize.where(
                 Sequelize.col("program_category.start_time"),
                 "<=",
-                currentTime
+                currentTime,
               ),
               Sequelize.where(
                 Sequelize.col("program_category.end_time"),
                 ">=",
-                currentTime
+                currentTime,
               ),
             ],
           },
@@ -312,19 +313,19 @@ exports.getCurrentProgram = async (req, res) => {
               Sequelize.where(
                 Sequelize.col("program_category.start_time"),
                 ">",
-                Sequelize.col("program_category.end_time")
+                Sequelize.col("program_category.end_time"),
               ),
               {
                 [Op.or]: [
                   Sequelize.where(
                     Sequelize.col("program_category.start_time"),
                     "<=",
-                    currentTime
+                    currentTime,
                   ),
                   Sequelize.where(
                     Sequelize.col("program_category.end_time"),
                     ">=",
-                    currentTime
+                    currentTime,
                   ),
                 ],
               },
@@ -339,11 +340,51 @@ exports.getCurrentProgram = async (req, res) => {
       return res.status(404).json({ message: "No program currently running" });
     }
 
+    const today = nowCH.format("YYYY-MM-DD");
+
+    const flashNews = await FlashNews.findAll({
+      include: [
+        {
+          model: ProgramCategory,
+          as: "categories",
+          where: { id: program.program_category.id },
+          attributes: [],
+          through: { attributes: [] },
+        },
+      ],
+      where: {
+        status: "active",
+        [Op.and]: [
+          {
+            [Op.or]: [
+              { start_date: null },
+              {
+                start_date: {
+                  [Op.lte]: today,
+                },
+              },
+            ],
+          },
+          {
+            [Op.or]: [
+              { end_date: null },
+              {
+                end_date: {
+                  [Op.gte]: today,
+                },
+              },
+            ],
+          },
+        ],
+      },
+      order: [["createdAt", "DESC"]],
+    });
+
     // Minutes left
     let endTime = moment.tz(
       program.program_category.end_time,
       "HH:mm:ss",
-      "Europe/Zurich"
+      "Europe/Zurich",
     );
     if (endTime.isBefore(nowCH)) {
       endTime.add(1, "day");
@@ -359,7 +400,7 @@ exports.getCurrentProgram = async (req, res) => {
           Sequelize.where(
             Sequelize.col("program_category.start_time"),
             ">",
-            program.program_category.start_time
+            program.program_category.start_time,
           ),
         ],
       },
@@ -378,6 +419,7 @@ exports.getCurrentProgram = async (req, res) => {
     res.json({
       current: program,
       next: nextProgram || null,
+      flash_news: flashNews,
       minutesLeft,
     });
   } catch (error) {

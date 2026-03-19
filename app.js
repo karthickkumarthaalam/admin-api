@@ -15,6 +15,9 @@ require("./jobs/deleteOldExpenses");
 const startPackageExpiryChecker = require("./jobs/packageStatusCron");
 startPackageExpiryChecker();
 
+const startFlashNewsExpiryCron = require("./jobs/flashNewsExpiryCron");
+startFlashNewsExpiryCron();
+
 const app = express();
 const server = http.createServer(app);
 

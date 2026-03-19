@@ -34,6 +34,7 @@ router.use("/departments", require("./departmentRoutes"));
 router.use("/system-user", require("./systemUserRoutes"));
 router.use("/radio-program", require("./radioProgramRoutes"));
 router.use("/program-question", require("./programQuestionRoutes"));
+router.use("/flash-news", require("./flashNewsRoutes"));
 
 // Modules & Permissions
 router.use("/modules", require("./moduleRoutes"));
