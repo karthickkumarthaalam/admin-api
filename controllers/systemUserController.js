@@ -77,6 +77,7 @@ exports.createSystemUser = async (req, res) => {
         is_admin: body.is_admin === "true" || body.is_admin === true,
         show_profile:
           body.show_profile === "true" || body.show_profile === true,
+        employee_type: body.employee_type || "employee",
       },
       { transaction },
     );
@@ -326,6 +327,10 @@ exports.getAllSystemUsers = async (req, res) => {
       includeConditions[0].where = {
         department_name: { [Op.like]: `%${req.query.department}%` },
       };
+    }
+
+    if (req.query.employee_type) {
+      filterConditions.employee_type = req.query.employee_type;
     }
 
     const result = await pagination(SystemUsers, {

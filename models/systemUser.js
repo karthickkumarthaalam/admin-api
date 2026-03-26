@@ -114,13 +114,17 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
+      employee_type: {
+        type: DataTypes.ENUM("employee", "external"),
+        defaultValue: "employee",
+      },
     },
     {
       tableName: "system_users",
       timestamps: true,
       paranoid: true,
       deletedAt: "deleted_at",
-    }
+    },
   );
 
   SystemUsers.associate = (models) => {
