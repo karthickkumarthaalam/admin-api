@@ -76,6 +76,21 @@ module.exports = (sequelize, DataTypes) => {
         },
         onDelete: "SET NULL",
       },
+      ticketing_type: {
+        type: DataTypes.ENUM("internal", "external"),
+        allowNull: false,
+        defaultValue: "internal",
+      },
+
+      ticket_url: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+
+      ticket_embed_code: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
     },
     {
       tableName: "events",

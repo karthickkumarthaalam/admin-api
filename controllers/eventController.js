@@ -24,6 +24,9 @@ exports.createEvent = async (req, res) => {
       state,
       city,
       status,
+      ticketing_type,
+      ticket_url,
+      ticket_embed_code,
     } = req.body;
 
     const user = req.user;
@@ -34,6 +37,16 @@ exports.createEvent = async (req, res) => {
       });
     }
 
+    if (ticketing_type === "external") {
+      if (!ticket_url && !ticket_embed_code) {
+        return res.status(400).json({
+          status: "error",
+          message:
+            "Provide ticket_url or ticket_embed_code for external ticketing",
+        });
+      }
+    }
+
     let logoUrl = null;
     const file = req.files?.logo?.[0]; // expecting field: logo
 
@@ -42,7 +55,7 @@ exports.createEvent = async (req, res) => {
       logoUrl = await uploadToCpanel(
         file.path,
         remoteFolder,
-        file.originalname
+        file.originalname,
       );
       if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
     }
@@ -64,6 +77,9 @@ exports.createEvent = async (req, res) => {
       status,
       logo_image: logoUrl,
       created_by: user?.id || null,
+      ticketing_type,
+      ticket_url,
+      ticket_embed_code,
     });
 
     res.status(201).json({
@@ -252,7 +268,6 @@ exports.getEventBySlug = async (req, res) => {
     });
 
     if (!event) {
-      console.log("flag marking here for the banner not available");
       return res.status(404).json({
         status: "error",
         message: "Event not found",
@@ -287,6 +302,9 @@ exports.updateEvent = async (req, res) => {
       state,
       city,
       status,
+      ticketing_type,
+      ticket_url,
+      ticket_embed_code,
     } = req.body;
 
     const event = await Event.findByPk(id);
@@ -295,6 +313,15 @@ exports.updateEvent = async (req, res) => {
         status: "error",
         message: "Event not found.",
       });
+    }
+    if (ticketing_type === "external") {
+      if (!ticket_url && !ticket_embed_code) {
+        return res.status(400).json({
+          status: "error",
+          message:
+            "Provide ticket_url or ticket_embed_code for external ticketing",
+        });
+      }
     }
 
     let updatedLogo = event.logo_image;
@@ -317,7 +344,7 @@ exports.updateEvent = async (req, res) => {
           updatedLogo = await uploadToCpanel(
             file.path,
             remoteFolder,
-            newFileName
+            newFileName,
           );
         } catch (err) {
           console.warn("⚠️ File handling warning:", err.message);
@@ -347,6 +374,9 @@ exports.updateEvent = async (req, res) => {
       city,
       status,
       logo_image: updatedLogo,
+      ticketing_type,
+      ticket_url,
+      ticket_embed_code,
     });
 
     res.status(200).json({
