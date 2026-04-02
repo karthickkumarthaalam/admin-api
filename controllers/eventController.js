@@ -429,3 +429,49 @@ exports.deleteEvent = async (req, res) => {
     });
   }
 };
+
+exports.getEventSEO = async (req, res) => {
+  try {
+    const { slug } = req.params;
+
+    const event = await Event.findOne({
+      where: { slug },
+      attributes: ["title", "description", "logo_image", "venue", "country"],
+      include: [
+        {
+          model: EventBanner,
+          as: "banners",
+          required: false,
+          where: { status: "active" },
+          attributes: ["url"],
+        },
+      ],
+    });
+
+    if (!event) {
+      return res.status(404).json({ success: false });
+    }
+
+    let bannerImage = null;
+    if (event.banners && event.banners.length > 0) {
+      bannerImage = event.banners[0].url;
+    }
+
+    const plainDescription = event.description
+      ?.replace(/<[^>]+>/g, "")
+      .slice(0, 160);
+
+    return res.json({
+      success: true,
+      data: {
+        title: event.title,
+        description: plainDescription,
+        image: bannerImage || event.logo_image,
+        keywords: `${event.title}, ${event.venue}, Tamil Events, Music Show`,
+      },
+    });
+  } catch (error) {
+    console.error("SEO API Error:", error);
+    return res.status(500).json({ success: false });
+  }
+};

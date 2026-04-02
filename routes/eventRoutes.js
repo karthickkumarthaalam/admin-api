@@ -6,7 +6,7 @@ const { authenticateToken } = require("../middlewares/authMiddleware");
 
 router.get("/all-events", eventController.getAllEventForUsers);
 router.get("/details/:slug", eventController.getEventBySlug);
-
+router.get("/seo/:slug", eventController.getEventSEO);
 router.use(authenticateToken);
 
 router.post(
@@ -15,7 +15,7 @@ router.post(
     mode: "fields",
     fieldsConfig: [{ name: "logo", maxCount: 1 }],
   }),
-  eventController.createEvent
+  eventController.createEvent,
 );
 
 router.get("/", eventController.getAllEvents);
@@ -28,7 +28,7 @@ router.put(
     mode: "fields",
     fieldsConfig: [{ name: "logo", maxCount: 1 }],
   }),
-  eventController.updateEvent
+  eventController.updateEvent,
 );
 
 router.delete("/:id", eventController.deleteEvent);
