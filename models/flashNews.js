@@ -13,11 +13,6 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
       },
 
-      news_content: {
-        type: DataTypes.TEXT,
-        allowNull: false,
-      },
-
       start_date: {
         type: DataTypes.DATEONLY,
         allowNull: true,
@@ -48,6 +43,11 @@ module.exports = (sequelize, DataTypes) => {
       through: "program_category_flash_news",
       foreignKey: "flash_news_id",
       as: "categories",
+    });
+
+    FlashNews.hasMany(models.FlashNewsItem, {
+      foreignKey: "flash_news_id",
+      as: "items",
     });
   };
 

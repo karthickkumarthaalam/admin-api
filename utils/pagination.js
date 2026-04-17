@@ -7,7 +7,7 @@ module.exports = async (
     order = [["createdAt", "DESC"]],
     include = [],
     paranoid = true,
-  }
+  },
 ) => {
   try {
     const offset = (page - 1) * limit;

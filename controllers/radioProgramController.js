@@ -4,6 +4,7 @@ const {
   SystemUsers,
   RadioStation,
   FlashNews,
+  FlashNewsItem,
 } = require("../models");
 const { Op, Sequelize } = require("sequelize");
 const pagination = require("../utils/pagination");
@@ -351,6 +352,13 @@ exports.getCurrentProgram = async (req, res) => {
           attributes: [],
           through: { attributes: [] },
         },
+        {
+          model: FlashNewsItem,
+          as: "items",
+          attributes: ["id", "content", "status"],
+          where: { status: "active" },
+          required: true,
+        },
       ],
       where: {
         status: "active",
@@ -358,22 +366,11 @@ exports.getCurrentProgram = async (req, res) => {
           {
             [Op.or]: [
               { start_date: null },
-              {
-                start_date: {
-                  [Op.lte]: today,
-                },
-              },
+              { start_date: { [Op.lte]: today } },
             ],
           },
           {
-            [Op.or]: [
-              { end_date: null },
-              {
-                end_date: {
-                  [Op.gte]: today,
-                },
-              },
-            ],
+            [Op.or]: [{ end_date: null }, { end_date: { [Op.gte]: today } }],
           },
         ],
       },
