@@ -112,6 +112,11 @@ exports.getAllNews = async (req, res) => {
     if (req.query.category) {
       whereCondition.category = req.query.category;
     }
+
+    if (req.query.subcategory) {
+      whereCondition.subcategory = req.query.subcategory;
+    }
+
     if (req.user && req.user.role !== "admin") {
       const systemUser = await SystemUsers.findOne({
         where: {
@@ -126,6 +131,8 @@ exports.getAllNews = async (req, res) => {
       whereCondition[Op.or] = [
         { title: { [Op.like]: `%${search}%` } },
         { subtitle: { [Op.like]: `%${search}%` } },
+        { category: { [Op.like]: `%${search}%` } },
+        { subcategory: { [Op.like]: `%${search}%` } },
       ];
     }
 

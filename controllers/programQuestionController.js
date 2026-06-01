@@ -3,29 +3,38 @@ const { Op, Sequelize } = require("sequelize");
 const moment = require("moment");
 const getClientIp = require("../utils/getClientIp");
 const { getCountryByIP } = require("../utils/ipGeolocation");
+const pagination = require("../utils/pagination");
 const {
   ProgramQuestion,
   ProgramQuestionOption,
   ProgramQuestionVote,
   ProgramQuestionFeedback,
+  RadioProgramQuestion,
+  RadioProgram,
 } = db;
 
-exports.createProgramQuesiton = async (req, res) => {
+exports.createProgramQuestion = async (req, res) => {
   try {
     const {
-      radio_program_id,
+      radio_program_ids = [],
       question,
       question_type,
       start_date,
       end_date,
-      status = "inactive",
+      status = "in-active",
       enable_feedback = false,
       enable_whatsapp = false,
       whatsapp_number,
       options = [],
     } = req.body;
 
-    if (!radio_program_id || !question) {
+    if (!Array.isArray(radio_program_ids) || radio_program_ids.length === 0) {
+      return res
+        .status(400)
+        .json({ message: "radio_program_ids must be a non-empty array" });
+    }
+
+    if (!question) {
       return res.status(400).json({ message: "Missing required fields" });
     }
 
@@ -35,7 +44,7 @@ exports.createProgramQuesiton = async (req, res) => {
 
     if (question_type === "quiz") {
       const correctCount = options.filter(
-        (o) => o.is_correct === 1 || o.is_correct === true,
+        (o) => o.is_correct === true || o.is_correct === 1,
       ).length;
 
       if (correctCount !== 1) {
@@ -45,8 +54,8 @@ exports.createProgramQuesiton = async (req, res) => {
       }
     }
 
+    // ✅ create question
     const programQuestion = await ProgramQuestion.create({
-      radio_program_id,
       question,
       question_type,
       status,
@@ -56,6 +65,13 @@ exports.createProgramQuesiton = async (req, res) => {
       enable_whatsapp,
       whatsapp_number,
     });
+
+    const mappingPayload = radio_program_ids.map((programId) => ({
+      program_question_id: programQuestion.id,
+      radio_program_id: programId,
+    }));
+
+    await RadioProgramQuestion.bulkCreate(mappingPayload);
 
     const optionPayload = options.map((opt) => ({
       program_question_id: programQuestion.id,
@@ -74,6 +90,213 @@ exports.createProgramQuesiton = async (req, res) => {
   }
 };
 
+exports.getAllProgramQuestions = async (req, res) => {
+  try {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    await ProgramQuestion.update(
+      { status: "in-active" },
+      {
+        where: {
+          end_date: {
+            [Op.lt]: todayStart,
+          },
+          status: "active",
+        },
+      },
+    );
+
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    const whereCondition = {};
+
+    if (req.query.search) {
+      const searchTerm = req.query.search.trim();
+
+      whereCondition[Op.or] = [
+        {
+          question: {
+            [Op.like]: `%${searchTerm}%`,
+          },
+        },
+      ];
+    }
+
+    const { count, rows } = await ProgramQuestion.findAndCountAll({
+      where: whereCondition,
+      include: [
+        {
+          model: RadioProgram,
+          as: "radio_programs",
+          through: { attributes: [] },
+        },
+        {
+          model: ProgramQuestionOption,
+          as: "options",
+          attributes: ["id", "option_text", "is_correct"],
+        },
+      ],
+      limit,
+      offset,
+      order: [["createdAt", "DESC"]],
+      distinct: true,
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    return res.status(200).json({
+      message: "Program Questions fetched successfully",
+      data: rows,
+      pagination: {
+        totalRecords: count,
+        totalPages,
+        currentPage: page,
+        perPage: limit,
+      },
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Failed to fetch all program questions",
+    });
+  }
+};
+
+exports.getProgramResults = async (req, res) => {
+  try {
+    const { question_id } = req.params;
+
+    if (!question_id) {
+      return res.status(400).json({
+        message: "question_id is required",
+      });
+    }
+
+    const question = await ProgramQuestion.findByPk(question_id, {
+      include: [
+        {
+          model: ProgramQuestionOption,
+          as: "options",
+          attributes: ["id", "option_text", "is_correct"],
+        },
+      ],
+    });
+
+    if (!question) {
+      return res.status(404).json({
+        message: "Question not found",
+      });
+    }
+
+    const questionJSON = question.toJSON();
+    const optionIds = questionJSON.options.map((o) => o.id);
+
+    if (optionIds.length === 0) {
+      return res.json({
+        data: {
+          ...questionJSON,
+          options: [],
+          total_votes: 0,
+          feedback_count: 0,
+          feedbacks: [],
+        },
+      });
+    }
+
+    // 🔥 Run queries in parallel
+    const [voteCounts, voteCountries, feedbacks, feedbackCount] =
+      await Promise.all([
+        ProgramQuestionVote.findAll({
+          where: { program_question_option_id: optionIds },
+          attributes: [
+            "program_question_option_id",
+            [Sequelize.fn("COUNT", Sequelize.col("id")), "vote_count"],
+          ],
+          group: ["program_question_option_id"],
+          raw: true,
+        }),
+
+        ProgramQuestionVote.findAll({
+          where: { program_question_option_id: optionIds },
+          attributes: [
+            "program_question_option_id",
+            "country",
+            "country_name",
+            [Sequelize.fn("COUNT", Sequelize.col("id")), "country_count"],
+          ],
+          group: ["program_question_option_id", "country", "country_name"],
+          raw: true,
+        }),
+
+        ProgramQuestionFeedback.findAll({
+          where: { program_question_id: question_id },
+          order: [["createdAt", "DESC"]],
+        }),
+
+        ProgramQuestionFeedback.count({
+          where: { program_question_id: question_id },
+        }),
+      ]);
+
+    // 🔥 Build maps efficiently
+    const voteCountMap = voteCounts.reduce((acc, v) => {
+      acc[v.program_question_option_id] = +v.vote_count;
+      return acc;
+    }, {});
+
+    const voteCountryMap = voteCountries.reduce((acc, v) => {
+      if (!acc[v.program_question_option_id]) {
+        acc[v.program_question_option_id] = [];
+      }
+
+      acc[v.program_question_option_id].push({
+        country: v.country,
+        country_name: v.country_name,
+        count: +v.country_count,
+      });
+
+      return acc;
+    }, {});
+
+    let totalVotes = 0;
+
+    const options = questionJSON.options.map((opt) => {
+      const voteCount = voteCountMap[opt.id] || 0;
+      totalVotes += voteCount;
+
+      return {
+        ...opt,
+        vote_count: voteCount,
+        country_breakdown: voteCountryMap[opt.id] || [],
+      };
+    });
+
+    const finalOptions = options.map((opt) => ({
+      ...opt,
+      percentage:
+        totalVotes > 0 ? ((opt.vote_count / totalVotes) * 100).toFixed(2) : 0,
+    }));
+
+    return res.json({
+      data: {
+        ...questionJSON,
+        options: finalOptions,
+        total_votes: totalVotes,
+        feedback_count: feedbackCount,
+        feedbacks,
+      },
+    });
+  } catch (error) {
+    console.error("Get results error:", error);
+    return res.status(500).json({
+      message: "Failed to fetch program results",
+    });
+  }
+};
+
 exports.getProgramQuestions = async (req, res) => {
   try {
     const { radio_program_id } = req.params;
@@ -85,10 +308,15 @@ exports.getProgramQuestions = async (req, res) => {
     }
 
     const questions = await ProgramQuestion.findAll({
-      where: {
-        radio_program_id,
-      },
       include: [
+        {
+          model: RadioProgram,
+          as: "radio_programs",
+          where: { id: radio_program_id },
+          attributes: [],
+          through: { attributes: [] },
+          required: true,
+        },
         {
           model: ProgramQuestionOption,
           as: "options",
@@ -100,7 +328,6 @@ exports.getProgramQuestions = async (req, res) => {
         ["createdAt", "DESC"],
       ],
     });
-
     if (questions.length === 0) {
       return res.json({
         count: 0,
@@ -262,21 +489,24 @@ exports.getActiveProgramQuestionsPublic = async (req, res) => {
 
     const questions = await ProgramQuestion.findAll({
       where: {
-        radio_program_id,
         status: "active",
         start_date: { [Op.lte]: swissEndOfDay },
         end_date: { [Op.gte]: swissStartOfDay },
       },
       include: [
         {
+          model: RadioProgram,
+          as: "radio_programs",
+          where: { id: radio_program_id },
+          attributes: [],
+          through: { attributes: [] },
+          required: true,
+        },
+        {
           model: ProgramQuestionOption,
           as: "options",
           attributes: ["id", "option_text"],
         },
-      ],
-      order: [
-        ["start_date", "ASC"],
-        ["createdAt", "ASC"],
       ],
     });
 
@@ -548,6 +778,10 @@ exports.updateStatus = async (req, res) => {
       return res.status(404).json({ message: "Question not found" });
     }
 
+    if (!["active", "in-active"].includes(status)) {
+      return res.status(400).json({ message: "invalid status" });
+    }
+
     question.status = status;
 
     await question.save();
@@ -596,6 +830,22 @@ exports.updateProgramQuestion = async (req, res) => {
       },
       { transaction: t },
     );
+
+    if (Array.isArray(req.body.radio_program_ids)) {
+      await RadioProgramQuestion.destroy({
+        where: { program_question_id: id },
+        transaction: t,
+      });
+
+      const mappingPayload = req.body.radio_program_ids.map((programId) => ({
+        program_question_id: id,
+        radio_program_id: programId,
+      }));
+
+      await RadioProgramQuestion.bulkCreate(mappingPayload, {
+        transaction: t,
+      });
+    }
 
     if (question_type === "quiz") {
       const correctCount = options.filter(

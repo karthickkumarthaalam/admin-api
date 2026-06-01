@@ -2,12 +2,14 @@ const express = require("express");
 const router = express.Router();
 const programQuestion = require("../controllers/programQuestionController");
 
-router.post("/", programQuestion.createProgramQuesiton);
+router.post("/", programQuestion.createProgramQuestion);
+router.get("/", programQuestion.getAllProgramQuestions);
+router.get("/question/:question_id", programQuestion.getProgramResults);
 router.get("/program/:radio_program_id", programQuestion.getProgramQuestions);
 
 router.get(
   "/program/:radio_program_id/active",
-  programQuestion.getActiveProgramQuestionsPublic
+  programQuestion.getActiveProgramQuestionsPublic,
 );
 
 router.post("/vote", programQuestion.voteForQuestion);

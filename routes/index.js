@@ -85,6 +85,9 @@ router.use("/news", require("./newsRoutes"));
 router.use("/news-media", require("./newsMediaRoutes"));
 router.use("/news-reactions", require("./newsReactionRoutes"));
 router.use("/news-comments", require("./newsCommentsRoutes"));
+router.use("/breaking-news", require("./breakingNewsRoutes"));
+router.use("/news-advertisement", require("./newsAdvertisementRoutes"));
+router.use("/news-poll", require("./pollRoutes"));
 
 // Events
 router.use("/event", require("./eventRoutes"));

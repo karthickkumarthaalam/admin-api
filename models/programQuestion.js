@@ -7,15 +7,6 @@ module.exports = (sequelize, DataTypes) => {
         autoIncrement: true,
         primaryKey: true,
       },
-      radio_program_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-        references: {
-          model: "RadioPrograms",
-          key: "id",
-        },
-        onDelete: "CASCADE",
-      },
       question: {
         type: DataTypes.TEXT,
         allowNull: false,
@@ -63,13 +54,15 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "program_questions",
       timestamps: true,
       paranoid: true,
-    }
+    },
   );
 
   ProgramQuestion.associate = (models) => {
-    ProgramQuestion.belongsTo(models.RadioProgram, {
-      foreignKey: "radio_program_id",
-      as: "radio_program",
+    ProgramQuestion.belongsToMany(models.RadioProgram, {
+      through: models.RadioProgramQuestion,
+      foreignKey: "program_question_id",
+      otherKey: "radio_program_id",
+      as: "radio_programs",
     });
 
     ProgramQuestion.hasMany(models.ProgramQuestionOption, {

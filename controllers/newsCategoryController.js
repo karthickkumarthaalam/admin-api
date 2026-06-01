@@ -38,14 +38,13 @@ exports.getCategoryList = async (req, res) => {
 
     const categories = await NewsCategory.findAll({
       where: whereCondition,
-      attributes: ["category_name"],
     });
 
-    const categoryArray = categories.map((cat) => cat.category_name);
+    // const categoryArray = categories.map((cat) => cat.category_name);
 
     res.status(200).json({
       status: "success",
-      data: categoryArray,
+      data: categories,
     });
   } catch (error) {
     console.error(error);

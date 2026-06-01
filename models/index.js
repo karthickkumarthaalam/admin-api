@@ -94,6 +94,11 @@ db.NewsCategory = require("./newsCategory")(sequelize, Sequelize);
 db.NewsMedia = require("./newsMedia")(sequelize, Sequelize);
 db.NewsReaction = require("./newsReaction")(sequelize, Sequelize);
 db.NewsComments = require("./newsComment")(sequelize, Sequelize);
+db.BreakingNews = require("./breakingNews")(sequelize, Sequelize);
+db.NewsAdvertisement = require("./newsAdvertisement")(sequelize, Sequelize);
+db.Poll = require("./poll")(sequelize, Sequelize);
+db.PollOption = require("./pollOption")(sequelize, Sequelize);
+db.PollVote = require("./pollVote")(sequelize, Sequelize);
 
 //Event tables
 db.Event = require("./event")(sequelize, Sequelize);
@@ -120,6 +125,10 @@ db.Notification = require("./notification")(sequelize, Sequelize);
 db.AuditLogs = require("./auditLogs")(sequelize, Sequelize);
 
 //Program Quiz
+db.RadioProgramQuestion = require("./radioProgramQuestion")(
+  sequelize,
+  Sequelize,
+);
 db.ProgramQuestion = require("./programQuestion")(sequelize, Sequelize);
 db.ProgramQuestionOption = require("./programQuestionOption")(
   sequelize,

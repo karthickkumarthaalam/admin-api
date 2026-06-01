@@ -44,7 +44,7 @@ module.exports = (sequelize, DataTypes) => {
       tableName: "news_comments",
       timestamps: true,
       paranoid: true,
-    }
+    },
   );
 
   NewsComments.associate = (models) => {
