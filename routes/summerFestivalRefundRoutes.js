@@ -9,6 +9,7 @@ router.post(
   summerFestivalRefundController.createRefundEnquiry,
 );
 router.get("/refund", summerFestivalRefundController.getAllRefundEnquiries);
+router.get("/refund-summary", summerFestivalRefundController.getRefundSummary);
 router.get(
   "/order-id/:ORDER_ID",
   summerFestivalRefundController.checkAttendeesOrderId,

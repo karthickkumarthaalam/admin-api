@@ -254,3 +254,77 @@ exports.getAttendeeByOrderId = async (req, res) => {
     });
   }
 };
+
+exports.getRefundSummary = async (req, res) => {
+  try {
+    const refunds = await SummerFestivalRefund.findAll({
+      attributes: ["ORDER_ID", "REFUNDED_STATUS"],
+    });
+
+    const orderIds = refunds.map((r) => r.ORDER_ID);
+
+    const attendees = await Attendee.findAll({
+      where: {
+        ORDER_ID: orderIds,
+      },
+      attributes: ["ORDER_ID", "AMOUNT_COLLECTED"],
+    });
+
+    const amountMap = {};
+
+    attendees.forEach((attendee) => {
+      const orderId = attendee.ORDER_ID;
+
+      if (!amountMap[orderId]) {
+        amountMap[orderId] = 0;
+      }
+
+      amountMap[orderId] += parseFloat(attendee.AMOUNT_COLLECTED || 0);
+    });
+
+    let totalAmountCollected = 0;
+    let pendingAmount = 0;
+    let refundedAmount = 0;
+    let verifiedAmount = 0;
+
+    refunds.forEach((refund) => {
+      const amount = amountMap[refund.ORDER_ID] || 0;
+
+      totalAmountCollected += amount;
+
+      if (refund.REFUNDED_STATUS === "pending") {
+        pendingAmount += amount;
+      }
+
+      if (refund.REFUNDED_STATUS === "verified") {
+        verifiedAmount += amount;
+      }
+
+      if (refund.REFUNDED_STATUS === "refunded") {
+        refundedAmount += amount;
+      }
+    });
+
+    return res.status(200).json({
+      status: "success",
+
+      summary: {
+        TOTAL_ENQUIRIES: refunds.length,
+
+        TOTAL_AMOUNT_COLLECTED: totalAmountCollected,
+
+        PENDING_AMOUNT: pendingAmount,
+
+        VERIFIED_AMOUNT: verifiedAmount,
+
+        REFUNDED_AMOUNT: refundedAmount,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      status: "error",
+      message: "Failed to fetch refund summary",
+      error: error.message,
+    });
+  }
+};
