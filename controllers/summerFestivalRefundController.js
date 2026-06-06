@@ -152,9 +152,11 @@ exports.checkAttendeesOrderId = async (req, res) => {
 exports.getAllRefundEnquiries = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 50;
+    const limit = parseInt(req.query.limit) || 100;
+    const offset = (page - 1) * limit;
 
     let whereCondition = {};
+    let attendeeWhere = {};
 
     if (req.query.search) {
       const searchValue = `%${req.query.search}%`;
@@ -170,19 +172,49 @@ exports.getAllRefundEnquiries = async (req, res) => {
     if (req.query.status) {
       whereCondition.REFUNDED_STATUS = req.query.status;
     }
-    const result = await pagination(SummerFestivalRefund, {
-      page,
-      limit,
+
+    if (req.query.ticket_class) {
+      const classValue = `%${req.query.ticket_class}%`;
+      attendeeWhere = {
+        [Op.or]: [{ TICKET_CLASS: { [Op.like]: classValue } }],
+      };
+    }
+
+    const { count, rows } = await SummerFestivalRefund.findAndCountAll({
       where: whereCondition,
+      include: [
+        {
+          model: Attendee,
+          attributes: [
+            "ORDER_ID",
+            "TICKET_ID",
+            "TICKET_CLASS",
+            "AMOUNT_COLLECTED",
+            "COUNTRY",
+          ],
+          where: attendeeWhere,
+          required: !!req.query.ticket_class,
+        },
+      ],
+      distinct: true,
+      limit,
+      offset,
       order: [["createdAt", "DESC"]],
     });
+
     return res.status(200).json({
       status: "success",
-      message: "Refund enquirires fetched successfully",
-      data: result.data,
-      pagination: result.pagination,
+      message: "Refund enquiries fetched successfully",
+      data: rows,
+      pagination: {
+        currentPage: page,
+        pageSize: limit,
+        totalRecords: count,
+        totalPages: Math.ceil(count / limit),
+      },
     });
   } catch (error) {
+    console.log(error, "showing error");
     return res
       .status(500)
       .json({ status: "error", message: "Failed to fetch refund enquiry" });

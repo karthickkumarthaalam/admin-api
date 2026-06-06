@@ -75,5 +75,13 @@ module.exports = (sequelize, DataTypes) => {
     },
   );
 
+  SummerFestivalRefund.associate = (models) => {
+    SummerFestivalRefund.hasMany(models.Attendee, {
+      foreignKey: "ORDER_ID",
+      sourceKey: "ORDER_ID",
+      constraints: false,
+    });
+  };
+
   return SummerFestivalRefund;
 };

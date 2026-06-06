@@ -51,5 +51,13 @@ module.exports = (sequelize, DataTypes) => {
     },
   );
 
+  Attendee.associate = (models) => {
+    Attendee.belongsTo(models.SummerFestivalRefund, {
+      foreignKey: "ORDER_ID",
+      targetKey: "ORDER_ID",
+      constraints: false,
+    });
+  };
+
   return Attendee;
 };
