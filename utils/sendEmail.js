@@ -130,6 +130,34 @@ const sendOtpEmail = async (toEmail, toName, otp) => {
   });
 };
 
+const resendOtpEmail = async (toEmail, toName, otp) => {
+  const htmlContent = emailLayout(`
+    <h2 style="margin:0 0 16px 0;color:#111111;">Hello ${toName},</h2>
+    <p>As requested, we've generated a new One-Time Password (OTP) for your account verification.</p>
+    <div style="text-align:center;background:#fff7f7;padding:20px;border-radius:6px;margin:20px 0;">
+      <h1 style="color:#cc0000;letter-spacing:4px;font-size:32px;margin:0;">${otp}</h1>
+      <p style="font-size:13px;color:#666;margin:8px 0 0 0;">This OTP is valid for <strong>5 minutes</strong>.</p>
+    </div>
+
+    <p>
+      If you didn't request a new OTP, you can safely ignore this email.
+      Your previous OTP is no longer valid.
+    </p>
+
+    <p>
+      Regards,<br/>
+      <strong>Thaalam Media GmbH</strong>
+    </p>
+  `);
+
+  return await sendEmail({
+    toEmail,
+    subject: "Your New Verification OTP",
+    htmlContent,
+    attachments: [logoAttachment],
+  });
+};
+
 const verificationEmail = async (toEmail, toName, otp) => {
   const htmlContent = emailLayout(`
     <h2 style="margin:0 0 16px 0;color:#111111;">Hello ${toName},</h2>
@@ -439,6 +467,7 @@ const sendCrewOtpEmail = async (toEmail, otp) => {
 module.exports = {
   sendEmail,
   sendOtpEmail,
+  resendOtpEmail,
   verificationEmail,
   sendExpiryEmail,
   sendPreExpiryEmail,

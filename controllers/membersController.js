@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const db = require("../models");
 const {
   sendOtpEmail,
+  resendOtpEmail,
   verificationEmail,
   generateOTP,
 } = require("../utils/sendEmail");
@@ -155,7 +156,7 @@ exports.login = async (req, res) => {
     const token = jwt.sign(
       { id: member.id, email: member.email },
       process.env.JWT_SECRET,
-      { expiresIn: "1d" }
+      { expiresIn: "1d" },
     );
 
     res.status(200).json({
@@ -395,6 +396,49 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Forgot password failed",
+      error: error.message,
+    });
+  }
+};
+
+exports.resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res
+        .status(400)
+        .json({ status: "error", message: "Email is required" });
+    }
+
+    const member = await Members.findOne({ email });
+
+    if (!member) {
+      return res
+        .statu(404)
+        .json({ status: "error", message: "Member not found" });
+    }
+
+    const otp = generateOTP();
+    const expiresAt = new Date(Date.now() + 1 * 60 * 1000);
+
+    await member.update({ otp, otp_expires_at: expiresAt });
+
+    await resendOtpEmail(email, member.name, otp).catch((err) => {
+      console.error("Error sending email:", err);
+      return res
+        .status(500)
+        .json({ status: "error", message: "Failed to send OTP email" });
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "OTP resent successfully",
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to resend OTP",
       error: error.message,
     });
   }
