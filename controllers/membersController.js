@@ -162,9 +162,21 @@ exports.login = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Login successful",
-      token: token,
-      username: member.name,
-      memberid: member.member_id,
+      token,
+
+      member: {
+        memberId: member.member_id,
+        name: member.name,
+        email: member.email,
+        phone: member.phone,
+        gender: member.gender,
+        country: member.country,
+        state: member.state,
+        city: member.city,
+        address1: member.address1,
+        address2: member.address2,
+        emailVerified: member.email_verified,
+      },
     });
   } catch (error) {
     return res
@@ -279,12 +291,18 @@ exports.updateMember = async (req, res) => {
         .json({ status: "error", message: "Member not found" });
     }
 
-    if (member.otp !== otp) {
-      return res.status(400).json({ status: "error", message: "Invalid OTP" });
-    }
+    if (otp !== undefined) {
+      if (member.otp !== otp) {
+        return res
+          .status(400)
+          .json({ status: "error", message: "Invalid OTP" });
+      }
 
-    if (new Date() > new Date(member.otp_expires_at)) {
-      return res.status(400).json({ status: "error", message: "OTP expired" });
+      if (new Date() > new Date(member.otp_expires_at)) {
+        return res
+          .status(400)
+          .json({ status: "error", message: "OTP expired" });
+      }
     }
 
     const updatedData = {};
