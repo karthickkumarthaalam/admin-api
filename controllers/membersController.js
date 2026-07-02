@@ -325,7 +325,19 @@ exports.updateMember = async (req, res) => {
     res.status(200).json({
       status: "success",
       message: "Member updated successfully",
-      member,
+      member: {
+        memberId: member.member_id,
+        name: member.name,
+        email: member.email,
+        phone: member.phone,
+        gender: member.gender,
+        country: member.country,
+        state: member.state,
+        city: member.city,
+        address1: member.address1,
+        address2: member.address2,
+        emailVerified: member.email_verified,
+      },
     });
   } catch (error) {
     res.status(500).json({
