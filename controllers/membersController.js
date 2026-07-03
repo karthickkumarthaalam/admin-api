@@ -25,6 +25,7 @@ exports.signup = async (req, res) => {
     password,
     address1,
     address2,
+    zip_code,
   } = req.body;
 
   try {
@@ -86,6 +87,7 @@ exports.signup = async (req, res) => {
       phone,
       address1,
       address2,
+      zip_code,
       password: hashedPassword,
       member_id: memberId,
       otp,
@@ -175,6 +177,7 @@ exports.login = async (req, res) => {
         city: member.city,
         address1: member.address1,
         address2: member.address2,
+        zip_code: member.zip_code,
         emailVerified: member.email_verified,
       },
     });
@@ -280,8 +283,18 @@ exports.requestUpdateOtp = async (req, res) => {
 
 exports.updateMember = async (req, res) => {
   const { id } = req.params;
-  const { name, gender, country, state, city, phone, address1, address2, otp } =
-    req.body;
+  const {
+    name,
+    gender,
+    country,
+    state,
+    city,
+    phone,
+    address1,
+    address2,
+    otp,
+    zip_code,
+  } = req.body;
 
   try {
     const member = await Members.findOne({ where: { member_id: id } });
@@ -315,6 +328,7 @@ exports.updateMember = async (req, res) => {
     if (phone) updatedData.phone = phone;
     if (address1) updatedData.address1 = address1;
     if (address2) updatedData.address2 = address2;
+    if (zip_code) updatedData.zip_code = zip_code;
 
     await member.update({
       ...updatedData,
@@ -336,6 +350,7 @@ exports.updateMember = async (req, res) => {
         city: member.city,
         address1: member.address1,
         address2: member.address2,
+        zip_code: member.zip_code,
         emailVerified: member.email_verified,
       },
     });
