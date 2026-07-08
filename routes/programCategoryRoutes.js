@@ -4,6 +4,8 @@ const programCategoryController = require("../controllers/programCategoryControl
 const uploadImage = require("../middlewares/uploadImages");
 const { authenticateToken } = require("../middlewares/authMiddleware");
 
+router.get("/public", programCategoryController.getAllProgramsPublic);
+
 router.use(authenticateToken);
 router.get("/", programCategoryController.getAllProgramCategories);
 
@@ -15,7 +17,7 @@ router.post(
     mode: "fields",
     fieldsConfig: [{ name: "image", maxCount: 1 }],
   }),
-  programCategoryController.createProgramCategory
+  programCategoryController.createProgramCategory,
 );
 
 router.patch("/:id/status", programCategoryController.updateStatus);
@@ -26,7 +28,7 @@ router.patch(
     mode: "fields",
     fieldsConfig: [{ name: "image", maxCount: 1 }],
   }),
-  programCategoryController.updateCategoryImage
+  programCategoryController.updateCategoryImage,
 );
 
 router.put(
@@ -35,7 +37,7 @@ router.put(
     mode: "fields",
     fieldsConfig: [{ name: "image", maxCount: 1 }],
   }),
-  programCategoryController.updateProgramCategory
+  programCategoryController.updateProgramCategory,
 );
 
 router.delete("/:id", programCategoryController.deleteProgramCategory);

@@ -9,22 +9,22 @@ router.get("/", authenticateToken, radioProgramController.getAllRadioPrograms);
 router.get(
   "/:id",
   authenticateToken,
-  radioProgramController.getRadioProgramById
+  radioProgramController.getRadioProgramById,
 );
 router.patch(
   "/:id",
   authenticateToken,
-  radioProgramController.updateRadioProgram
+  radioProgramController.updateRadioProgram,
 );
 router.patch(
   "/:id/status",
   authenticateToken,
-  radioProgramController.updateProgramStatus
+  radioProgramController.updateProgramStatus,
 );
 router.delete(
   "/:id",
   authenticateToken,
-  radioProgramController.deleteRadioProgram
+  radioProgramController.deleteRadioProgram,
 );
 
 module.exports = router;

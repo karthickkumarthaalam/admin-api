@@ -28,7 +28,7 @@ exports.createProgramCategory = async (req, res) => {
       image_url = await uploadToCpanel(
         image.path,
         "programBanner/images",
-        image.originalname
+        image.originalname,
       );
       fs.unlinkSync(image.path);
     }
@@ -62,6 +62,27 @@ exports.createProgramCategory = async (req, res) => {
     res.status(500).json({
       status: "error",
       message: "Failed to create Program Category",
+      error: error.message,
+    });
+  }
+};
+
+exports.getAllProgramsPublic = async (req, res) => {
+  try {
+    const programs = await ProgramCategory.findAll({
+      where: { status: "active" },
+      order: [["start_time", "ASC"]],
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Programs fetched successfully",
+      data: programs,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch programs",
       error: error.message,
     });
   }
@@ -201,7 +222,7 @@ exports.updateProgramCategory = async (req, res) => {
       let image_url = await uploadToCpanel(
         image.path,
         serverPath,
-        image.originalname
+        image.originalname,
       );
       programCategory.image_url = image_url;
       fs.unlinkSync(image.path);
@@ -311,7 +332,7 @@ exports.updateCategoryImage = async (req, res) => {
     const image_url = await uploadToCpanel(
       image.path,
       serverPath,
-      image.originalname
+      image.originalname,
     );
 
     program.image_url = image_url;
