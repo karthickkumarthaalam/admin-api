@@ -11,9 +11,11 @@ const getDiff = require("../utils/getDiff");
 
 // Create Program Category
 exports.createProgramCategory = async (req, res) => {
-  const image = req.files["image"] ? req.files["image"][0] : null;
+  const image = req.files?.["image"]?.[0] || null;
+  const mobileImage = req.files?.["mobile_image"]?.[0] || null;
+
   try {
-    const { category, start_time, end_time, country } = req.body;
+    const { category, start_time, end_time, country, description } = req.body;
 
     if (!category || !start_time || !end_time) {
       return res.status(400).json({
@@ -21,10 +23,10 @@ exports.createProgramCategory = async (req, res) => {
         message: "Category, Start Time and End Time are required.",
       });
     }
-
     let image_url = null;
+    let mobile_image_url = null;
 
-    if (image && image.path) {
+    if (image?.path) {
       image_url = await uploadToCpanel(
         image.path,
         "programBanner/images",
@@ -33,12 +35,23 @@ exports.createProgramCategory = async (req, res) => {
       fs.unlinkSync(image.path);
     }
 
+    if (mobileImage?.path) {
+      mobile_image_url = await uploadToCpanel(
+        mobileImage.path,
+        "programBanner/mobile-images",
+        mobileImage.originalname,
+      );
+      fs.unlinkSync(mobileImage.path);
+    }
+
     const programCategory = await ProgramCategory.create({
       category,
       start_time,
       end_time,
       country,
+      description,
       image_url,
+      mobile_image_url,
       status: "in-active",
     });
 
@@ -58,7 +71,13 @@ exports.createProgramCategory = async (req, res) => {
       data: programCategory,
     });
   } catch (error) {
-    if (image && fs.existsSync(image.path)) fs.unlinkSync(image.path);
+    if (image?.path && fs.existsSync(image.path)) {
+      fs.unlinkSync(image.path);
+    }
+
+    if (mobileImage?.path && fs.existsSync(mobileImage.path)) {
+      fs.unlinkSync(mobileImage.path);
+    }
     res.status(500).json({
       status: "error",
       message: "Failed to create Program Category",
@@ -197,10 +216,12 @@ exports.updateStatus = async (req, res) => {
 
 // Update Program Category
 exports.updateProgramCategory = async (req, res) => {
-  const image = req.files["image"] ? req.files["image"][0] : null;
+  const image = req.files?.["image"]?.[0] || null;
+  const mobileImage = req.files?.["mobile_image"]?.[0] || null;
+
   try {
     const { id } = req.params;
-    const { category, start_time, end_time, country } = req.body;
+    const { category, start_time, end_time, country, description } = req.body;
 
     const programCategory = await ProgramCategory.findByPk(id);
 
@@ -227,14 +248,45 @@ exports.updateProgramCategory = async (req, res) => {
       programCategory.image_url = image_url;
       fs.unlinkSync(image.path);
     }
+
+    if (mobileImage?.path) {
+      const serverPath = "programBanner/mobile-images";
+
+      if (programCategory.mobile_image_url) {
+        const filename = programCategory.mobile_image_url.split("/").pop();
+        await deleteFromCpanel(serverPath, filename);
+      }
+
+      const mobile_image_url = await uploadToCpanel(
+        mobileImage.path,
+        serverPath,
+        mobileImage.originalname,
+      );
+
+      programCategory.mobile_image_url = mobile_image_url;
+
+      fs.unlinkSync(mobileImage.path);
+    }
+
     if (req.body.remove_image === "true") {
       programCategory.image_url = null;
+    }
+
+    if (req.body.remove_mobile_image === "true") {
+      if (programCategory.mobile_image_url) {
+        const filename = programCategory.mobile_image_url.split("/").pop();
+
+        await deleteFromCpanel("programBanner/mobile-images", filename);
+      }
+
+      programCategory.mobile_image_url = null;
     }
 
     programCategory.category = category || programCategory.category;
     programCategory.start_time = start_time || programCategory.start_time;
     programCategory.end_time = end_time || programCategory.end_time;
     programCategory.country = country || programCategory.country;
+    programCategory.description = description ?? programCategory.description;
 
     await programCategory.save();
 
@@ -253,7 +305,13 @@ exports.updateProgramCategory = async (req, res) => {
       data: programCategory,
     });
   } catch (error) {
-    if (image && fs.existsSync(image.path)) fs.unlinkSync(image.path);
+    if (image?.path && fs.existsSync(image.path)) {
+      fs.unlinkSync(image.path);
+    }
+
+    if (mobileImage?.path && fs.existsSync(mobileImage.path)) {
+      fs.unlinkSync(mobileImage.path);
+    }
     res.status(500).json({
       status: "error",
       message: "Failed to update Program Category",

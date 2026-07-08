@@ -28,7 +28,15 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         defaultValue: "in-active",
       },
+      description: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+      },
       image_url: {
+        type: DataTypes.STRING,
+        allowNull: true,
+      },
+      mobile_image_url: {
         type: DataTypes.STRING,
         allowNull: true,
       },

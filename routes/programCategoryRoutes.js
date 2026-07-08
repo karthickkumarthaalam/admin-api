@@ -15,7 +15,10 @@ router.post(
   "/create",
   uploadImage("uploads/programBanner", {
     mode: "fields",
-    fieldsConfig: [{ name: "image", maxCount: 1 }],
+    fieldsConfig: [
+      { name: "image", maxCount: 1 },
+      { name: "mobile_image", maxCount: 1 },
+    ],
   }),
   programCategoryController.createProgramCategory,
 );
@@ -35,7 +38,10 @@ router.put(
   "/:id",
   uploadImage("uploads/programBanner", {
     mode: "fields",
-    fieldsConfig: [{ name: "image", maxCount: 1 }],
+    fieldsConfig: [
+      { name: "image", maxCount: 1 },
+      { name: "mobile_image", maxCount: 1 },
+    ],
   }),
   programCategoryController.updateProgramCategory,
 );
